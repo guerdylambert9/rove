@@ -16,9 +16,9 @@ export default function BottomNav({ variant = 'renter' }) {
         ]
       : [
           { icon: 'browse', label: 'Browse', to: '/' },
-          { icon: 'trips', label: 'Trips', to: '/dashboard' },
-          { icon: 'chat', label: 'Inbox', to: '/dashboard' },
-          { icon: 'account', label: 'Account', to: '/dashboard' },
+          { icon: 'trips', label: 'Trips', to: '/trips' },
+          { icon: 'chat', label: 'Inbox', to: '/inbox' },
+          { icon: 'account', label: 'Account', to: '/account' },
         ]
 
   return (

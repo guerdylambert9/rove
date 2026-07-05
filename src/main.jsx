@@ -3,14 +3,17 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.jsx'
 import { BookingProvider } from './state/booking.jsx'
+import { AuthProvider } from './state/auth.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <BookingProvider>
-        <App />
-      </BookingProvider>
+      <AuthProvider>
+        <BookingProvider>
+          <App />
+        </BookingProvider>
+      </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>,
 )

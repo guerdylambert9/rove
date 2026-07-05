@@ -1,4 +1,5 @@
-// Static fleet data. Replace with an API call when you wire up a backend.
+// Static fleet data for the owner dashboard (Phase 7 will wire real data).
+// Browse and car detail load vehicles from Supabase — see src/api/vehicles.js.
 export const cars = [
   {
     id: 'model3',

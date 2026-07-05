@@ -1,5 +1,6 @@
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
-import { getCar } from '../data/cars.js'
+import { fetchVehicle } from '../api/vehicles.js'
 import { useBooking } from '../state/booking.jsx'
 import Icon from '../components/Icon.jsx'
 
@@ -7,7 +8,59 @@ export default function CarDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { trip, selectCar } = useBooking()
-  const car = getCar(id)
+  const [car, setCar] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    fetchVehicle(id)
+      .then((data) => {
+        if (!cancelled) setCar(data)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            err.message === 'SUPABASE_NOT_CONFIGURED'
+              ? 'Backend not configured. See .env.example.'
+              : err.message || 'Could not load vehicle',
+          )
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="pad" style={{ paddingTop: 24 }}>
+          <p className="auth-note">Loading…</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="page">
+        <div className="pad" style={{ paddingTop: 24 }}>
+          <p className="auth-error">{error}</p>
+          <button className="auth-switch" onClick={() => navigate('/')}>
+            Back to browse
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!car) return <Navigate to="/" replace />
 

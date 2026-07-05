@@ -5,6 +5,9 @@ import Insurance from './pages/Insurance.jsx'
 import Checkout from './pages/Checkout.jsx'
 import Confirmed from './pages/Confirmed.jsx'
 import Dashboard from './pages/Dashboard.jsx'
+import Account from './pages/Account.jsx'
+import Trips from './pages/Trips.jsx'
+import Inbox from './pages/Inbox.jsx'
 
 export default function App() {
   return (
@@ -15,7 +18,10 @@ export default function App() {
         <Route path="/insurance" element={<Insurance />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/confirmed" element={<Confirmed />} />
+        <Route path="/trips" element={<Trips />} />
+        <Route path="/inbox" element={<Inbox />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/account" element={<Account />} />
       </Routes>
     </div>
   )
