@@ -1,0 +1,41 @@
+import { useNavigate, useLocation } from 'react-router-dom'
+import Icon from './Icon.jsx'
+
+// `variant` switches between the renter tabs and the owner tabs.
+export default function BottomNav({ variant = 'renter' }) {
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+
+  const tabs =
+    variant === 'owner'
+      ? [
+          { icon: 'browse', label: 'Home', to: '/' },
+          { icon: 'fleet', label: 'Fleet', to: '/dashboard' },
+          { icon: 'trips', label: 'Trips', to: '/dashboard' },
+          { icon: 'payouts', label: 'Payouts', to: '/dashboard' },
+        ]
+      : [
+          { icon: 'browse', label: 'Browse', to: '/' },
+          { icon: 'trips', label: 'Trips', to: '/dashboard' },
+          { icon: 'chat', label: 'Inbox', to: '/dashboard' },
+          { icon: 'account', label: 'Account', to: '/dashboard' },
+        ]
+
+  return (
+    <nav className="tabbar">
+      {tabs.map((t) => {
+        const active = pathname === t.to
+        return (
+          <button
+            key={t.label}
+            className={`tab ${active ? 'on' : ''}`}
+            onClick={() => navigate(t.to)}
+          >
+            <Icon name={t.icon} size={22} />
+            <span>{t.label}</span>
+          </button>
+        )
+      })}
+    </nav>
+  )
+}
