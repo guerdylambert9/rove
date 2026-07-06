@@ -1,12 +1,35 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
+import {
+  canUseOwnerView,
+  hasRole,
+  isAdmin,
+  isOwner,
+} from '../lib/roles.js'
+
+const VIEW_MODE_KEY = 'rove-view-mode'
 
 const AuthContext = createContext(null)
+
+function readStoredViewMode() {
+  const stored = localStorage.getItem(VIEW_MODE_KEY)
+  if (stored === 'owner' || stored === 'renter') return stored
+  return null
+}
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
+  const [viewMode, setViewModeState] = useState('renter')
+
+  const applyViewModeForProfile = useCallback((nextProfile) => {
+    if (!canUseOwnerView(nextProfile)) {
+      setViewModeState('renter')
+      return
+    }
+    setViewModeState(readStoredViewMode() ?? 'owner')
+  }, [])
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -36,6 +59,7 @@ export function AuthProvider({ children }) {
         loadProfile(nextSession.user.id)
       } else {
         setProfile(null)
+        setViewModeState('renter')
       }
     })
 
@@ -52,7 +76,10 @@ export function AuthProvider({ children }) {
       .eq('id', userId)
       .maybeSingle()
 
-    if (!error && data) setProfile(data)
+    if (!error && data) {
+      setProfile(data)
+      applyViewModeForProfile(data)
+    }
   }
 
   async function signUp({ email, password, name }) {
@@ -77,26 +104,70 @@ export function AuthProvider({ children }) {
   async function signOut() {
     const { error } = await supabase.auth.signOut()
     if (error) throw error
+    localStorage.removeItem(VIEW_MODE_KEY)
   }
+
+  async function updateProfile({ name, phone }) {
+    const userId = session?.user?.id
+    if (!userId) throw new Error('Not signed in')
+
+    const patch = {}
+    if (name !== undefined) patch.name = name
+    if (phone !== undefined) patch.phone = phone
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(patch)
+      .eq('id', userId)
+      .select('id, name, email, phone, roles, identity_verified')
+      .single()
+
+    if (error) throw error
+    setProfile(data)
+    return data
+  }
+
+  const setViewMode = useCallback(
+    (mode) => {
+      if (mode === 'owner' && !canUseOwnerView(profile)) return
+      setViewModeState(mode)
+      if (canUseOwnerView(profile)) {
+        localStorage.setItem(VIEW_MODE_KEY, mode)
+      }
+    },
+    [profile],
+  )
 
   const user = session?.user ?? null
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        session,
-        loading,
-        configured: isSupabaseConfigured,
-        signUp,
-        signIn,
-        signOut,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  const navVariant = useMemo(() => {
+    if (canUseOwnerView(profile) && viewMode === 'owner') return 'owner'
+    return 'renter'
+  }, [profile, viewMode])
+
+  const value = useMemo(
+    () => ({
+      user,
+      profile,
+      session,
+      loading,
+      configured: isSupabaseConfigured,
+      viewMode,
+      navVariant,
+      signUp,
+      signIn,
+      signOut,
+      updateProfile,
+      setViewMode,
+      hasRole: (role) => hasRole(profile, role),
+      isAdmin: () => isAdmin(profile),
+      isOwner: () => isOwner(profile),
+      canUseOwnerView: () => canUseOwnerView(profile),
+    }),
+    [user, profile, session, loading, viewMode, navVariant, setViewMode],
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

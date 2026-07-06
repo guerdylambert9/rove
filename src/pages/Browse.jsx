@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchVehicles } from '../api/vehicles.js'
 import CarCard from '../components/CarCard.jsx'
-import BottomNav from '../components/BottomNav.jsx'
+import AppBottomNav from '../components/AppBottomNav.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function Browse() {
@@ -68,7 +68,7 @@ export default function Browse() {
         </div>
       </div>
 
-      <BottomNav variant="renter" />
+      <AppBottomNav />
     </div>
   )
 }

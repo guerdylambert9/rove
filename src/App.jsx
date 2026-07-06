@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Account from './pages/Account.jsx'
 import Trips from './pages/Trips.jsx'
 import Inbox from './pages/Inbox.jsx'
+import OwnerRoute from './components/OwnerRoute.jsx'
 
 export default function App() {
   return (
@@ -20,7 +21,14 @@ export default function App() {
         <Route path="/confirmed" element={<Confirmed />} />
         <Route path="/trips" element={<Trips />} />
         <Route path="/inbox" element={<Inbox />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route
+          path="/dashboard"
+          element={
+            <OwnerRoute>
+              <Dashboard />
+            </OwnerRoute>
+          }
+        />
         <Route path="/account" element={<Account />} />
       </Routes>
     </div>

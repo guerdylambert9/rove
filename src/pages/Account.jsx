@@ -1,12 +1,23 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import BottomNav from '../components/BottomNav.jsx'
-import Icon from '../components/Icon.jsx'
+import { useNavigate, useLocation } from 'react-router-dom'
+import AppBottomNav from '../components/AppBottomNav.jsx'
 import { useAuth } from '../state/auth.jsx'
 
 export default function Account() {
   const navigate = useNavigate()
-  const { user, profile, loading, configured, signIn, signUp, signOut } = useAuth()
+  const location = useLocation()
+  const {
+    user,
+    profile,
+    loading,
+    configured,
+    viewMode,
+    signIn,
+    signUp,
+    signOut,
+    setViewMode,
+    canUseOwnerView,
+  } = useAuth()
   const [mode, setMode] = useState('signin')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -14,6 +25,12 @@ export default function Account() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const switchView = () => {
+    const next = viewMode === 'owner' ? 'renter' : 'owner'
+    setViewMode(next)
+    navigate(next === 'owner' ? '/dashboard' : '/')
+  }
 
   if (!configured) {
     return (
@@ -28,7 +45,7 @@ export default function Account() {
             </p>
           </div>
         </div>
-        <BottomNav variant="renter" />
+        <AppBottomNav />
       </div>
     )
   }
@@ -41,7 +58,7 @@ export default function Account() {
             <p className="auth-note">Loading account…</p>
           </div>
         </div>
-        <BottomNav variant="renter" />
+        <AppBottomNav />
       </div>
     )
   }
@@ -63,18 +80,33 @@ export default function Account() {
                   Roles: {profile.roles.join(', ')}
                 </div>
               )}
+              {canUseOwnerView() && (
+                <div className="sm" style={{ marginTop: 8 }}>
+                  Viewing as: {viewMode === 'owner' ? 'Owner' : 'Renter'}
+                </div>
+              )}
             </div>
+
+            {canUseOwnerView() && (
+              <button
+                className="cta outline"
+                style={{ marginTop: 16 }}
+                onClick={switchView}
+              >
+                {viewMode === 'owner' ? 'Switch to renter view' : 'Switch to owner view'}
+              </button>
+            )}
 
             <button
               className="cta outline"
-              style={{ marginTop: 16 }}
+              style={{ marginTop: 12 }}
               onClick={() => signOut()}
             >
               Sign out
             </button>
           </div>
         </div>
-        <BottomNav variant="renter" />
+        <AppBottomNav />
       </div>
     )
   }
@@ -92,7 +124,8 @@ export default function Account() {
         setMode('signin')
       } else {
         await signIn({ email, password })
-        navigate('/')
+        const redirectTo = location.state?.from || '/'
+        navigate(redirectTo)
       }
     } catch (err) {
       setError(err.message || 'Something went wrong')
@@ -181,7 +214,7 @@ export default function Account() {
           </button>
         </div>
       </div>
-      <BottomNav variant="renter" />
+      <AppBottomNav />
     </div>
   )
 }
