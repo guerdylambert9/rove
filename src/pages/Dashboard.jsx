@@ -1,5 +1,5 @@
 import { cars } from '../data/cars.js'
-import BottomNav from '../components/BottomNav.jsx'
+import AppBottomNav from '../components/AppBottomNav.jsx'
 
 export default function Dashboard() {
   return (
@@ -58,7 +58,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <BottomNav variant="owner" />
+      <AppBottomNav />
     </div>
   )
 }

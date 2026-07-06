@@ -9,10 +9,10 @@ export default function BottomNav({ variant = 'renter' }) {
   const tabs =
     variant === 'owner'
       ? [
-          { icon: 'browse', label: 'Home', to: '/' },
+          { icon: 'browse', label: 'Home', to: '/dashboard' },
           { icon: 'fleet', label: 'Fleet', to: '/dashboard' },
           { icon: 'trips', label: 'Trips', to: '/dashboard' },
-          { icon: 'payouts', label: 'Payouts', to: '/dashboard' },
+          { icon: 'account', label: 'Account', to: '/account' },
         ]
       : [
           { icon: 'browse', label: 'Browse', to: '/' },

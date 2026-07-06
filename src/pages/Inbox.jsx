@@ -1,4 +1,4 @@
-import BottomNav from '../components/BottomNav.jsx'
+import AppBottomNav from '../components/AppBottomNav.jsx'
 
 export default function Inbox() {
   return (
@@ -17,7 +17,7 @@ export default function Inbox() {
         </div>
       </div>
 
-      <BottomNav variant="renter" />
+      <AppBottomNav />
     </div>
   )
 }
