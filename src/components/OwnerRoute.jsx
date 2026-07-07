@@ -1,9 +1,17 @@
 import { useEffect } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../state/auth.jsx'
+import MfaEnroll from './MfaEnroll.jsx'
 
 export default function OwnerRoute({ children }) {
-  const { user, loading, canUseOwnerView, setViewMode } = useAuth()
+  const {
+    user,
+    loading,
+    canUseOwnerView,
+    setViewMode,
+    hasVerifiedTotp,
+    refreshMfaState,
+  } = useAuth()
   const location = useLocation()
 
   useEffect(() => {
@@ -28,6 +36,18 @@ export default function OwnerRoute({ children }) {
 
   if (!canUseOwnerView()) {
     return <Navigate to="/" replace />
+  }
+
+  if (!hasVerifiedTotp) {
+    return (
+      <div className="page">
+        <div className="scroll">
+          <div className="pad" style={{ paddingTop: 24 }}>
+            <MfaEnroll required onEnrolled={refreshMfaState} />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return children

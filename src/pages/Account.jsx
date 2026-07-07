@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import AppBottomNav from '../components/AppBottomNav.jsx'
+import PasswordField from '../components/PasswordField.jsx'
+import MfaSecurity from '../components/MfaSecurity.jsx'
 import { useAuth } from '../state/auth.jsx'
+import { validatePassword } from '../lib/password.js'
 
 export default function Account() {
   const navigate = useNavigate()
@@ -14,7 +17,9 @@ export default function Account() {
     viewMode,
     signIn,
     signUp,
+    signInWithGoogle,
     signOut,
+    updateProfile,
     setViewMode,
     canUseOwnerView,
   } = useAuth()
@@ -25,11 +30,32 @@ export default function Account() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [editPhone, setEditPhone] = useState('')
+  const [profileError, setProfileError] = useState('')
+  const [profileMessage, setProfileMessage] = useState('')
+  const [savingProfile, setSavingProfile] = useState(false)
+
+  useEffect(() => {
+    if (profile) {
+      setEditName(profile.name ?? '')
+      setEditPhone(profile.phone ?? '')
+    }
+  }, [profile])
 
   const switchView = () => {
     const next = viewMode === 'owner' ? 'renter' : 'owner'
     setViewMode(next)
     navigate(next === 'owner' ? '/dashboard' : '/')
+  }
+
+  const handleGoogleSignIn = async () => {
+    setError('')
+    try {
+      await signInWithGoogle()
+    } catch (err) {
+      setError(err.message || 'Could not start Google sign-in')
+    }
   }
 
   if (!configured) {
@@ -64,7 +90,29 @@ export default function Account() {
   }
 
   if (user) {
-    const displayName = profile?.name || user.email
+    const handleSaveProfile = async (e) => {
+      e.preventDefault()
+      setProfileError('')
+      setProfileMessage('')
+      setSavingProfile(true)
+
+      try {
+        const trimmedName = editName.trim()
+        if (!trimmedName) {
+          setProfileError('Name is required.')
+          return
+        }
+        await updateProfile({
+          name: trimmedName,
+          phone: editPhone.trim() || null,
+        })
+        setProfileMessage('Profile saved.')
+      } catch (err) {
+        setProfileError(err.message || 'Could not save profile')
+      } finally {
+        setSavingProfile(false)
+      }
+    }
 
     return (
       <div className="page">
@@ -72,20 +120,62 @@ export default function Account() {
           <div className="pad" style={{ paddingTop: 24 }}>
             <h1 className="h1">Account</h1>
 
-            <div className="rcard">
-              <div className="nm">{displayName}</div>
-              <div className="sm">{user.email}</div>
+            <form className="authform" onSubmit={handleSaveProfile}>
+              <div className="sectitle" style={{ marginBottom: 4 }}>
+                Profile
+              </div>
+
+              <label className="authfield">
+                <span>Name</span>
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Your name"
+                  required
+                  autoComplete="name"
+                />
+              </label>
+
+              <label className="authfield">
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={user.email}
+                  disabled
+                  className="input-disabled"
+                />
+              </label>
+
+              <label className="authfield">
+                <span>Phone</span>
+                <input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  placeholder="(555) 555-0100"
+                  autoComplete="tel"
+                />
+              </label>
+
               {profile?.roles?.length > 0 && (
-                <div className="sm" style={{ marginTop: 8 }}>
-                  Roles: {profile.roles.join(', ')}
-                </div>
+                <p className="auth-note">Roles: {profile.roles.join(', ')}</p>
               )}
               {canUseOwnerView() && (
-                <div className="sm" style={{ marginTop: 8 }}>
+                <p className="auth-note">
                   Viewing as: {viewMode === 'owner' ? 'Owner' : 'Renter'}
-                </div>
+                </p>
               )}
-            </div>
+
+              {profileError && <p className="auth-error">{profileError}</p>}
+              {profileMessage && <p className="auth-success">{profileMessage}</p>}
+
+              <button className="cta sky" type="submit" disabled={savingProfile}>
+                {savingProfile ? 'Saving…' : 'Save profile'}
+              </button>
+            </form>
+
+            <MfaSecurity />
 
             {canUseOwnerView() && (
               <button
@@ -119,9 +209,15 @@ export default function Account() {
 
     try {
       if (mode === 'signup') {
+        const { valid } = validatePassword(password)
+        if (!valid) {
+          setError('Please meet all password requirements below.')
+          return
+        }
         await signUp({ email, password, name })
         setMessage('Check your email to confirm your account, then sign in.')
         setMode('signin')
+        setPassword('')
       } else {
         await signIn({ email, password })
         const redirectTo = location.state?.from || '/'
@@ -144,6 +240,18 @@ export default function Account() {
               ? 'Join Rové to book cars from the fleet.'
               : 'Welcome back. Sign in to continue.'}
           </p>
+
+          <button
+            className="cta outline oauth-btn"
+            type="button"
+            onClick={handleGoogleSignIn}
+          >
+            Continue with Google
+          </button>
+
+          <div className="auth-divider">
+            <span>or use email</span>
+          </div>
 
           <form className="authform" onSubmit={handleSubmit}>
             {mode === 'signup' && (
@@ -172,18 +280,21 @@ export default function Account() {
               />
             </label>
 
-            <label className="authfield">
-              <span>Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 6 characters"
-                required
-                minLength={6}
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-              />
-            </label>
+            {mode === 'signup' ? (
+              <PasswordField value={password} onChange={setPassword} />
+            ) : (
+              <label className="authfield">
+                <span>Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  required
+                  autoComplete="current-password"
+                />
+              </label>
+            )}
 
             {error && <p className="auth-error">{error}</p>}
             {message && <p className="auth-success">{message}</p>}
@@ -204,6 +315,7 @@ export default function Account() {
               setMode(mode === 'signup' ? 'signin' : 'signup')
               setError('')
               setMessage('')
+              setPassword('')
             }}
           >
             {mode === 'signup' ? (
