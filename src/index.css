@@ -144,7 +144,8 @@ a {
   justify-content: space-between;
   align-items: center;
 }
-.sectitle a {
+.sectitle a,
+.linkbtn {
   color: var(--sky);
   font-size: 12px;
   font-weight: 600;
@@ -807,6 +808,133 @@ a {
   background: var(--card);
   color: var(--ink);
   border: 1px solid var(--line);
+}
+.input-disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--mist);
+}
+.oauth-btn {
+  width: 100%;
+  margin-bottom: 4px;
+}
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+  color: var(--slate);
+  font-size: 13px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.pwfield {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pwstrength {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pwstrength-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  position: relative;
+  overflow: hidden;
+}
+.pwstrength-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 25%;
+  background: #c0392b;
+  border-radius: 2px;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.pwstrength[data-score='2'] .pwstrength-bar::after {
+  width: 50%;
+  background: #d68910;
+}
+.pwstrength[data-score='3'] .pwstrength-bar::after {
+  width: 75%;
+  background: #1a7f4b;
+}
+.pwstrength[data-score='4'] .pwstrength-bar::after {
+  width: 100%;
+  background: #1a7f4b;
+}
+.pwstrength-label {
+  font-size: 12px;
+  color: var(--slate);
+  min-width: 72px;
+}
+.pwrules {
+  list-style: none;
+  font-size: 13px;
+  color: var(--slate);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pwrules li::before {
+  content: '○ ';
+  color: var(--slate);
+}
+.pwrules li.met {
+  color: #1a7f4b;
+}
+.pwrules li.met::before {
+  content: '✓ ';
+}
+.mfa-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mfa-qr {
+  align-self: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.mfa-qr svg {
+  display: block;
+  width: 180px;
+  height: 180px;
+}
+.mfa-qr img {
+  display: block;
+  width: 180px;
+  height: 180px;
+}
+.mfa-secret-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mfa-secret-key {
+  font-family: var(--mono);
+  font-size: 13px;
+  word-break: break-all;
+  background: var(--card);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.mfa-secret code {
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
 }
 
 /* ---- Accessibility ---- */

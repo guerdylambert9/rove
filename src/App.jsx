@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard.jsx'
 import Account from './pages/Account.jsx'
 import Trips from './pages/Trips.jsx'
 import Inbox from './pages/Inbox.jsx'
+import Fleet from './pages/Fleet.jsx'
+import AddVehicle from './pages/AddVehicle.jsx'
 import OwnerRoute from './components/OwnerRoute.jsx'
 
 export default function App() {
@@ -26,6 +28,22 @@ export default function App() {
           element={
             <OwnerRoute>
               <Dashboard />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/fleet"
+          element={
+            <OwnerRoute>
+              <Fleet />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/fleet/add"
+          element={
+            <OwnerRoute>
+              <AddVehicle />
             </OwnerRoute>
           }
         />

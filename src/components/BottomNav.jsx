@@ -10,7 +10,7 @@ export default function BottomNav({ variant = 'renter' }) {
     variant === 'owner'
       ? [
           { icon: 'browse', label: 'Home', to: '/dashboard' },
-          { icon: 'fleet', label: 'Fleet', to: '/dashboard' },
+          { icon: 'fleet', label: 'Fleet', to: '/fleet' },
           { icon: 'trips', label: 'Trips', to: '/dashboard' },
           { icon: 'account', label: 'Account', to: '/account' },
         ]
@@ -24,7 +24,9 @@ export default function BottomNav({ variant = 'renter' }) {
   return (
     <nav className="tabbar">
       {tabs.map((t) => {
-        const active = pathname === t.to
+        const active =
+          pathname === t.to ||
+          (t.to === '/fleet' && pathname.startsWith('/fleet'))
         return (
           <button
             key={t.label}

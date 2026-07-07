@@ -6,6 +6,7 @@ import {
   isAdmin,
   isOwner,
 } from '../lib/roles.js'
+import { refreshMfaState, verifyMfaCode } from '../lib/mfa.js'
 
 const VIEW_MODE_KEY = 'rove-view-mode'
 
@@ -22,6 +23,11 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(isSupabaseConfigured)
   const [viewMode, setViewModeState] = useState('renter')
+  const [mfa, setMfa] = useState({
+    hasVerifiedTotp: false,
+    needsChallenge: false,
+    totpFactors: [],
+  })
 
   const applyViewModeForProfile = useCallback((nextProfile) => {
     if (!canUseOwnerView(nextProfile)) {
@@ -30,6 +36,19 @@ export function AuthProvider({ children }) {
     }
     setViewModeState(readStoredViewMode() ?? 'owner')
   }, [])
+
+  const loadMfaState = useCallback(async () => {
+    if (!isSupabaseConfigured || !session?.user) {
+      setMfa({ hasVerifiedTotp: false, needsChallenge: false, totpFactors: [] })
+      return
+    }
+    try {
+      const state = await refreshMfaState(supabase)
+      setMfa(state)
+    } catch {
+      setMfa({ hasVerifiedTotp: false, needsChallenge: false, totpFactors: [] })
+    }
+  }, [session?.user])
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
@@ -43,9 +62,10 @@ export function AuthProvider({ children }) {
       if (!mounted) return
       setSession(current)
       if (current?.user) {
-        loadProfile(current.user.id).finally(() => {
-          if (mounted) setLoading(false)
-        })
+        Promise.all([loadProfile(current.user.id)])
+          .finally(() => {
+            if (mounted) setLoading(false)
+          })
       } else {
         setLoading(false)
       }
@@ -60,6 +80,7 @@ export function AuthProvider({ children }) {
       } else {
         setProfile(null)
         setViewModeState('renter')
+        setMfa({ hasVerifiedTotp: false, needsChallenge: false, totpFactors: [] })
       }
     })
 
@@ -68,6 +89,12 @@ export function AuthProvider({ children }) {
       subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    if (session?.user) {
+      loadMfaState()
+    }
+  }, [session?.user, loadMfaState])
 
   async function loadProfile(userId) {
     const { data, error } = await supabase
@@ -98,7 +125,18 @@ export function AuthProvider({ children }) {
       password,
     })
     if (error) throw error
+    await loadMfaState()
     return data
+  }
+
+  async function signInWithGoogle() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/account`,
+      },
+    })
+    if (error) throw error
   }
 
   async function signOut() {
@@ -127,6 +165,11 @@ export function AuthProvider({ children }) {
     return data
   }
 
+  const verifyMfaChallenge = useCallback(async (code) => {
+    await verifyMfaCode(supabase, code)
+    await loadMfaState()
+  }, [loadMfaState])
+
   const setViewMode = useCallback(
     (mode) => {
       if (mode === 'owner' && !canUseOwnerView(profile)) return
@@ -145,6 +188,8 @@ export function AuthProvider({ children }) {
     return 'renter'
   }, [profile, viewMode])
 
+  const requiresOwnerMfa = canUseOwnerView(profile) && !mfa.hasVerifiedTotp
+
   const value = useMemo(
     () => ({
       user,
@@ -154,17 +199,35 @@ export function AuthProvider({ children }) {
       configured: isSupabaseConfigured,
       viewMode,
       navVariant,
+      hasVerifiedTotp: mfa.hasVerifiedTotp,
+      needsMfaChallenge: mfa.needsChallenge,
+      requiresOwnerMfa,
       signUp,
       signIn,
+      signInWithGoogle,
       signOut,
       updateProfile,
       setViewMode,
+      refreshMfaState: loadMfaState,
+      verifyMfaChallenge,
       hasRole: (role) => hasRole(profile, role),
       isAdmin: () => isAdmin(profile),
       isOwner: () => isOwner(profile),
       canUseOwnerView: () => canUseOwnerView(profile),
     }),
-    [user, profile, session, loading, viewMode, navVariant, setViewMode],
+    [
+      user,
+      profile,
+      session,
+      loading,
+      viewMode,
+      navVariant,
+      mfa,
+      requiresOwnerMfa,
+      setViewMode,
+      loadMfaState,
+      verifyMfaChallenge,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
