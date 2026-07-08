@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { vehicleImageStyle } from '../lib/vehicleImage.js'
 import AppBottomNav from '../components/AppBottomNav.jsx'
 import { fetchOwnerVehicles } from '../api/vehicles.js'
 import { useAuth } from '../state/auth.jsx'
@@ -60,7 +61,7 @@ export default function Fleet() {
 
           {cars.map((car) => (
             <div className="fleetrow" key={car.id}>
-              <div className="th" style={{ background: car.gradient }} />
+              <div className="th" style={vehicleImageStyle(car)} />
               <div>
                 <div className="nm">{car.name}</div>
                 <div className={`st ${car.status}`}>

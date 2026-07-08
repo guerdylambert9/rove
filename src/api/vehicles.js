@@ -41,6 +41,11 @@ function mapVehicleToRow(vehicle) {
     status_label: vehicle.statusLabel ?? 'Idle · open now',
     trips_count: 0,
     available: true,
+    photos: vehicle.photos?.length
+      ? vehicle.photos.filter(Boolean)
+      : vehicle.photoUrl
+        ? [vehicle.photoUrl]
+        : [],
   }
 }
 

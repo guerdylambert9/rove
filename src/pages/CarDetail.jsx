@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
 import { useBooking } from '../state/booking.jsx'
+import { photoBackgroundStyle, vehicleImageStyle } from '../lib/vehicleImage.js'
+import ImageLightbox from '../components/ImageLightbox.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function CarDetail() {
@@ -11,6 +13,7 @@ export default function CarDetail() {
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [lightboxIndex, setLightboxIndex] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -64,6 +67,7 @@ export default function CarDetail() {
 
   if (!car) return <Navigate to="/" replace />
 
+  const photos = car.photos?.filter(Boolean) ?? []
   const subtotal = car.pricePerDay * trip.days
   const serviceFee = 28
 
@@ -74,8 +78,22 @@ export default function CarDetail() {
 
   return (
     <div className="page">
-      <div className="hero" style={{ background: car.gradient }}>
-        <button className="iconbtn back" onClick={() => navigate('/')}>
+      <div
+        className="hero hero-clickable"
+        style={vehicleImageStyle(car)}
+        onClick={() => photos.length && setLightboxIndex(0)}
+        onKeyDown={(e) => e.key === 'Enter' && photos.length && setLightboxIndex(0)}
+        role={photos.length ? 'button' : undefined}
+        tabIndex={photos.length ? 0 : undefined}
+      >
+        <button
+          type="button"
+          className="iconbtn back"
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate('/')
+          }}
+        >
           <Icon name="back" size={18} />
         </button>
         <div className="hero-title">
@@ -83,6 +101,21 @@ export default function CarDetail() {
           <h1>{car.name}</h1>
         </div>
       </div>
+
+      {photos.length > 1 && (
+        <div className="photo-strip">
+          {photos.map((url, i) => (
+            <button
+              key={`${url}-${i}`}
+              type="button"
+              className="photo-strip-item"
+              style={photoBackgroundStyle(url, car.gradient)}
+              onClick={() => setLightboxIndex(i)}
+              aria-label={`View photo ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="scroll">
         <div className="pad">
@@ -146,6 +179,15 @@ export default function CarDetail() {
         <span>Continue</span>
         <span>${subtotal + serviceFee} total ›</span>
       </button>
+
+      {lightboxIndex !== null && photos.length > 0 && (
+        <ImageLightbox
+          photos={photos}
+          index={lightboxIndex}
+          title={car.name}
+          onClose={() => setLightboxIndex(null)}
+        />
+      )}
     </div>
   )
 }

@@ -1,5 +1,6 @@
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useBooking } from '../state/booking.jsx'
+import { vehicleImageStyle } from '../lib/vehicleImage.js'
 
 export default function Checkout() {
   const navigate = useNavigate()
@@ -27,7 +28,7 @@ export default function Checkout() {
 
           <div className="rcard">
             <div className="mini">
-              <div className="thumb" style={{ background: car.gradient }} />
+              <div className="thumb" style={vehicleImageStyle(car)} />
               <div>
                 <div className="nm">{car.name}</div>
                 <div className="sm">

@@ -191,6 +191,77 @@ a {
 .carcard:active {
   transform: scale(0.99);
 }
+
+/* ---- Car photo collage (browse) ---- */
+.carcollage {
+  position: relative;
+  height: 118px;
+  width: 100%;
+  border: none;
+  padding: 0;
+  overflow: hidden;
+  background: var(--mist);
+}
+.carcollage-single {
+  display: flex;
+  align-items: flex-end;
+  padding: 10px;
+  cursor: pointer;
+}
+.carcollage-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+.carcollage-three {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+}
+.carcollage-three .cell-0 {
+  grid-row: 1 / span 2;
+}
+.carcollage-cell {
+  border: none;
+  padding: 0;
+  min-height: 0;
+  cursor: pointer;
+  position: relative;
+}
+.carcollage-cell:hover {
+  filter: brightness(1.05);
+}
+.carcollage-badge {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  pointer-events: none;
+}
+.carcollage-more {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(11, 37, 69, 0.55);
+  color: #fff;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 18px;
+}
+.carcollage .badge,
+.carcollage-single .badge {
+  background: rgba(11, 37, 69, 0.82);
+  backdrop-filter: blur(4px);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-family: var(--display);
+  color: #fff;
+}
+
 .carimg {
   height: 118px;
   position: relative;
@@ -210,6 +281,11 @@ a {
 }
 .carmeta {
   padding: 11px 13px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: #fff;
+  cursor: pointer;
 }
 .carmeta .nm {
   font-family: var(--display);
@@ -789,6 +865,202 @@ a {
   background: var(--card);
   font-size: 15px;
 }
+.selectfield {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-size: 15px;
+}
+.photo-preview {
+  height: 140px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+}
+.photo-preview-lg {
+  height: 180px;
+  margin-bottom: 12px;
+}
+.photo-input {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.authfield-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate);
+}
+.photo-dropzone {
+  padding: 16px;
+  border: 2px dashed var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  text-align: center;
+}
+.photo-dropzone:focus-visible {
+  outline: 2px solid var(--sky);
+  outline-offset: 2px;
+}
+.photo-dropzone-hint {
+  font-size: 13px;
+  color: var(--slate);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+.photo-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.photo-thumb-wrap {
+  position: relative;
+}
+.photo-thumb {
+  height: 72px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.photo-thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(11, 37, 69, 0.85);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+}
+.photo-url-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.photo-url-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-size: 15px;
+}
+
+/* ---- Photo strip (detail) ---- */
+.photo-strip {
+  display: flex;
+  gap: 6px;
+  padding: 8px 16px;
+  overflow-x: auto;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.photo-strip-item {
+  flex: 0 0 72px;
+  height: 54px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+.hero-clickable {
+  cursor: pointer;
+}
+
+/* ---- Image lightbox ---- */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(11, 37, 69, 0.88);
+  border: none;
+  cursor: pointer;
+}
+.lightbox-panel {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.lightbox-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  color: #fff;
+}
+.lightbox-title {
+  flex: 1;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 15px;
+}
+.lightbox-count {
+  font-size: 13px;
+  opacity: 0.85;
+}
+.lightbox-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+.lightbox-img {
+  max-width: min(100%, 420px);
+  max-height: min(70vh, 560px);
+  border-radius: var(--radius);
+  object-fit: contain;
+  background: #000;
+}
+.lightbox-nav {
+  display: flex;
+  gap: 16px;
+}
+.lightbox-arrow {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+.lightbox-arrow:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
 .auth-error {
   font-size: 14px;
   color: #c0392b;

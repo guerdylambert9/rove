@@ -6,6 +6,8 @@ import {
   slugifyVehicleId,
   VEHICLE_GRADIENTS,
 } from '../api/vehicles.js'
+import { SAMPLE_VEHICLES } from '../data/sampleVehicles.js'
+import VehiclePhotoInput from '../components/VehiclePhotoInput.jsx'
 import { useAuth } from '../state/auth.jsx'
 
 export default function AddVehicle() {
@@ -19,8 +21,24 @@ export default function AddVehicle() {
   const [drive, setDrive] = useState('Auto')
   const [distanceMi, setDistanceMi] = useState('')
   const [badge, setBadge] = useState('Instant book')
+  const [photos, setPhotos] = useState([])
+  const [photoError, setPhotoError] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const applySample = (e) => {
+    const sample = SAMPLE_VEHICLES.find((s) => s.label === e.target.value)
+    if (!sample) return
+    setName(sample.name)
+    setYear(sample.year)
+    setPricePerDay(String(sample.pricePerDay))
+    setSeats(sample.seats)
+    setRange(sample.range)
+    setDrive(sample.drive)
+    setDistanceMi(String(sample.distanceMi))
+    setBadge(sample.badge)
+    setPhotos(sample.photoUrl ? [sample.photoUrl] : [])
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -49,6 +67,7 @@ export default function AddVehicle() {
         drive: drive.trim() || 'Auto',
         distanceMi: distanceMi ? Number(distanceMi) : null,
         badge: badge.trim() || 'Instant book',
+        photos,
         gradient,
       })
 
@@ -74,6 +93,20 @@ export default function AddVehicle() {
           <p className="auth-note">
             List a vehicle for rent. It will appear on Browse once saved.
           </p>
+
+          <label className="authfield">
+            <span>Fill from sample (optional)</span>
+            <select className="selectfield" defaultValue="" onChange={applySample}>
+              <option value="" disabled>
+                Choose a sample car…
+              </option>
+              {SAMPLE_VEHICLES.map((sample) => (
+                <option key={sample.label} value={sample.label}>
+                  {sample.label}
+                </option>
+              ))}
+            </select>
+          </label>
 
           <form className="authform" onSubmit={handleSubmit}>
             <label className="authfield">
@@ -166,6 +199,15 @@ export default function AddVehicle() {
                 placeholder="Instant book"
               />
             </label>
+
+            <VehiclePhotoInput
+              userId={user?.id}
+              value={photos}
+              onChange={setPhotos}
+              onError={setPhotoError}
+            />
+
+            {photoError && <p className="auth-error">{photoError}</p>}
 
             {error && <p className="auth-error">{error}</p>}
 
