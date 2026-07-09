@@ -10,6 +10,7 @@ import Trips from './pages/Trips.jsx'
 import Inbox from './pages/Inbox.jsx'
 import Fleet from './pages/Fleet.jsx'
 import AddVehicle from './pages/AddVehicle.jsx'
+import EditVehicle from './pages/EditVehicle.jsx'
 import OwnerRoute from './components/OwnerRoute.jsx'
 
 export default function App() {
@@ -44,6 +45,14 @@ export default function App() {
           element={
             <OwnerRoute>
               <AddVehicle />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/fleet/:id/edit"
+          element={
+            <OwnerRoute>
+              <EditVehicle />
             </OwnerRoute>
           }
         />

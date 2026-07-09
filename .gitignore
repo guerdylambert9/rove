@@ -6,6 +6,7 @@ node_modules
 # build output
 dist
 dist-ssr
+.vercel
 
 # local env files
 .env
@@ -28,3 +29,4 @@ pnpm-debug.log*
 *.njsproj
 *.sln
 *.sw?
+.env*

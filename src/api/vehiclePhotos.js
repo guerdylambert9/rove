@@ -45,7 +45,15 @@ export async function uploadVehiclePhoto(file, userId) {
       contentType: file.type,
     })
 
-  if (error) throw error
+  if (error) {
+    const msg = error.message?.toLowerCase() ?? ''
+    if (msg.includes('bucket not found')) {
+      throw new Error(
+        'Photo storage is not set up. Run supabase/migrations/004_vehicle_photos_storage.sql in the Supabase SQL Editor, then try again.',
+      )
+    }
+    throw error
+  }
 
   const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(data.path)
   return urlData.publicUrl

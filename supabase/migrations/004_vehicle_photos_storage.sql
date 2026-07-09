@@ -1,4 +1,5 @@
 -- Vehicle photo storage for owner uploads (browse / paste in app)
+-- Safe to re-run.
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values (
@@ -12,6 +13,11 @@ on conflict (id) do update set
   public = excluded.public,
   file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Vehicle photos are publicly readable" on storage.objects;
+drop policy if exists "Owners can upload vehicle photos" on storage.objects;
+drop policy if exists "Owners can update own vehicle photos" on storage.objects;
+drop policy if exists "Owners can delete own vehicle photos" on storage.objects;
 
 create policy "Vehicle photos are publicly readable"
   on storage.objects for select

@@ -60,7 +60,12 @@ export default function Fleet() {
           )}
 
           {cars.map((car) => (
-            <div className="fleetrow" key={car.id}>
+            <button
+              type="button"
+              className="fleetrow fleetrow--clickable"
+              key={car.id}
+              onClick={() => navigate(`/fleet/${car.id}/edit`)}
+            >
               <div className="th" style={vehicleImageStyle(car)} />
               <div>
                 <div className="nm">{car.name}</div>
@@ -73,7 +78,8 @@ export default function Fleet() {
                 <b>${car.pricePerDay}</b>
                 <span>/day</span>
               </div>
-            </div>
+              <span className="fleetrow-edit">Edit</span>
+            </button>
           ))}
         </div>
       </div>

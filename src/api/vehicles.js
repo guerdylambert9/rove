@@ -113,6 +113,54 @@ export async function fetchOwnerVehicles(ownerId) {
   return data.map(mapVehicle)
 }
 
+export async function fetchOwnerVehicle(id, ownerId) {
+  if (!isSupabaseConfigured) {
+    throw new Error('SUPABASE_NOT_CONFIGURED')
+  }
+
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .eq('id', id)
+    .eq('owner_id', ownerId)
+    .maybeSingle()
+
+  if (error) throw error
+  return data ? mapVehicle(data) : null
+}
+
+function mapVehicleUpdateToRow(vehicle) {
+  return {
+    name: vehicle.name,
+    year: vehicle.year,
+    price_per_day: vehicle.pricePerDay,
+    seats: vehicle.seats,
+    range: vehicle.range,
+    drive: vehicle.drive ?? 'Auto',
+    distance_mi: vehicle.distanceMi ?? null,
+    badge: vehicle.badge ?? 'Instant book',
+    photos: vehicle.photos?.length ? vehicle.photos.filter(Boolean) : [],
+  }
+}
+
+export async function updateVehicle(id, ownerId, vehicle) {
+  if (!isSupabaseConfigured) {
+    throw new Error('SUPABASE_NOT_CONFIGURED')
+  }
+
+  const row = mapVehicleUpdateToRow(vehicle)
+  const { data, error } = await supabase
+    .from('vehicles')
+    .update(row)
+    .eq('id', id)
+    .eq('owner_id', ownerId)
+    .select('*')
+    .single()
+
+  if (error) throw error
+  return mapVehicle(data)
+}
+
 export async function createVehicle(vehicle) {
   if (!isSupabaseConfigured) {
     throw new Error('SUPABASE_NOT_CONFIGURED')

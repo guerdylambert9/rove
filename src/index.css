@@ -779,6 +779,23 @@ a {
   padding: 11px;
   margin-bottom: 9px;
 }
+.fleetrow--clickable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.fleetrow--clickable:hover {
+  border-color: var(--sky);
+}
+.fleetrow-edit {
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sky);
+  margin-left: 4px;
+}
 .fleetrow .th {
   width: 50px;
   height: 38px;
