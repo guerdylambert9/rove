@@ -5,6 +5,14 @@ import { VEHICLE_GRADIENTS } from '../api/vehicles.js'
 
 const MAX_PHOTOS = 8
 
+function reorderList(items, fromIndex, toIndex) {
+  if (fromIndex === toIndex || fromIndex == null || toIndex == null) return items
+  const next = [...items]
+  const [moved] = next.splice(fromIndex, 1)
+  next.splice(toIndex, 0, moved)
+  return next
+}
+
 export default function VehiclePhotoInput({
   userId,
   value = [],
@@ -14,6 +22,8 @@ export default function VehiclePhotoInput({
   const inputRef = useRef(null)
   const [uploading, setUploading] = useState(false)
   const [urlDraft, setUrlDraft] = useState('')
+  const [dragIndex, setDragIndex] = useState(null)
+  const [dropIndex, setDropIndex] = useState(null)
 
   const photos = value.filter(Boolean)
 
@@ -29,6 +39,34 @@ export default function VehiclePhotoInput({
 
   const removePhoto = (index) => {
     onChange(photos.filter((_, i) => i !== index))
+  }
+
+  const handleThumbDragStart = (e, index) => {
+    setDragIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+
+  const handleThumbDragOver = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    if (dragIndex !== null && index !== dragIndex) setDropIndex(index)
+  }
+
+  const handleThumbDrop = (e, index) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const from =
+      dragIndex ?? Number.parseInt(e.dataTransfer.getData('text/plain'), 10)
+    if (!Number.isNaN(from)) onChange(reorderList(photos, from, index))
+    setDragIndex(null)
+    setDropIndex(null)
+  }
+
+  const handleThumbDragEnd = () => {
+    setDragIndex(null)
+    setDropIndex(null)
   }
 
   const processFiles = async (files) => {
@@ -83,6 +121,9 @@ export default function VehiclePhotoInput({
 
   const handleDrop = (e) => {
     e.preventDefault()
+    if (e.dataTransfer.types.includes('text/plain') && !e.dataTransfer.files?.length) {
+      return
+    }
     if (e.dataTransfer.files?.length) processFiles(e.dataTransfer.files)
   }
 
@@ -108,16 +149,42 @@ export default function VehiclePhotoInput({
       >
         <p className="photo-dropzone-hint">
           Paste, drop, or browse multiple images (⌘V / Ctrl+V)
+          {photos.length > 1 && (
+            <>
+              <br />
+              <span className="photo-dropzone-reorder">Drag thumbnails to reorder</span>
+            </>
+          )}
         </p>
 
         {photos.length > 0 && (
           <div className="photo-thumbs">
             {photos.map((url, i) => (
-              <div key={`${url}-${i}`} className="photo-thumb-wrap">
+              <div
+                key={`${url}-${i}`}
+                className={[
+                  'photo-thumb-wrap',
+                  dragIndex === i && 'photo-thumb-wrap--dragging',
+                  dropIndex === i && 'photo-thumb-wrap--drop-target',
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                draggable
+                onDragStart={(e) => handleThumbDragStart(e, i)}
+                onDragOver={(e) => handleThumbDragOver(e, i)}
+                onDrop={(e) => handleThumbDrop(e, i)}
+                onDragEnd={handleThumbDragEnd}
+                onDragLeave={() => {
+                  if (dropIndex === i) setDropIndex(null)
+                }}
+              >
                 <div
                   className="photo-thumb"
                   style={photoBackgroundStyle(url, VEHICLE_GRADIENTS[0])}
                 />
+                <span className="photo-thumb-order" aria-hidden>
+                  {i + 1}
+                </span>
                 <button
                   type="button"
                   className="photo-thumb-remove"

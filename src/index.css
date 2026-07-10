@@ -926,6 +926,10 @@ a {
   margin-bottom: 12px;
   line-height: 1.5;
 }
+.photo-dropzone-reorder {
+  font-size: 12px;
+  color: var(--sky);
+}
 .photo-actions {
   display: flex;
   flex-wrap: wrap;
@@ -941,11 +945,41 @@ a {
 }
 .photo-thumb-wrap {
   position: relative;
+  touch-action: none;
+}
+.photo-thumb-wrap[draggable='true'] {
+  cursor: grab;
+}
+.photo-thumb-wrap[draggable='true']:active {
+  cursor: grabbing;
+}
+.photo-thumb-wrap--dragging {
+  opacity: 0.45;
+}
+.photo-thumb-wrap--drop-target .photo-thumb {
+  outline: 2px solid var(--sky);
+  outline-offset: 2px;
 }
 .photo-thumb {
   height: 72px;
   border-radius: 10px;
   border: 1px solid var(--line);
+}
+.photo-thumb-order {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: rgba(11, 37, 69, 0.75);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
 }
 .photo-thumb-remove {
   position: absolute;
