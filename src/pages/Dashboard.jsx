@@ -1,15 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchOwnerVehicles } from '../api/vehicles.js'
+import { fetchOwnerTrips } from '../api/trips.js'
 import { vehicleImageStyle } from '../lib/vehicleImage.js'
 import AppBottomNav from '../components/AppBottomNav.jsx'
+import TripCard from '../components/TripCard.jsx'
 import { useAuth } from '../state/auth.jsx'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [cars, setCars] = useState([])
+  const [trips, setTrips] = useState([])
   const [loadingFleet, setLoadingFleet] = useState(true)
+  const [loadingTrips, setLoadingTrips] = useState(true)
 
   useEffect(() => {
     if (!user) return
@@ -23,6 +27,14 @@ export default function Dashboard() {
         if (!cancelled) setLoadingFleet(false)
       })
 
+    fetchOwnerTrips(user.id)
+      .then((data) => {
+        if (!cancelled) setTrips(data)
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingTrips(false)
+      })
+
     return () => {
       cancelled = true
     }
@@ -32,6 +44,10 @@ export default function Dashboard() {
     cars.length > 0
       ? Math.round(cars.reduce((sum, c) => sum + c.pricePerDay, 0) / cars.length)
       : 0
+
+  const activeTrips = trips.filter(
+    (t) => !['completed', 'cancelled', 'deposit_released'].includes(t.state),
+  )
 
   return (
     <div className="page">
@@ -57,7 +73,7 @@ export default function Dashboard() {
           </div>
           <div className="kpi">
             <div className="lb">Trips</div>
-            <div className="vl">0</div>
+            <div className="vl">{loadingTrips ? '…' : activeTrips.length}</div>
           </div>
           <div className="kpi">
             <div className="lb">Avg / day</div>
@@ -66,7 +82,16 @@ export default function Dashboard() {
         </div>
 
         <div className="pad" style={{ paddingTop: 4 }}>
-          <div className="sectitle">
+          <div className="sectitle">Bookings</div>
+          {loadingTrips && <p className="auth-note">Loading bookings…</p>}
+          {!loadingTrips && trips.length === 0 && (
+            <p className="auth-note">No bookings yet. They’ll appear here when renters book your cars.</p>
+          )}
+          {trips.slice(0, 5).map((trip) => (
+            <TripCard key={trip.id} trip={trip} />
+          ))}
+
+          <div className="sectitle" style={{ marginTop: 20 }}>
             Fleet{' '}
             <button type="button" className="linkbtn" onClick={() => navigate('/fleet')}>
               Manage

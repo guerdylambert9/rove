@@ -8,6 +8,8 @@ import {
 } from '../api/vehicles.js'
 import { SAMPLE_VEHICLES } from '../data/sampleVehicles.js'
 import VehiclePhotoInput from '../components/VehiclePhotoInput.jsx'
+import ComboField from '../components/ComboField.jsx'
+import { DRIVE_OPTIONS, BADGE_OPTIONS } from '../data/vehicleFieldOptions.js'
 import { useAuth } from '../state/auth.jsx'
 
 export default function AddVehicle() {
@@ -82,7 +84,7 @@ export default function AddVehicle() {
   return (
     <div className="page">
       <div className="scroll">
-        <div className="pad" style={{ paddingTop: 24 }}>
+        <div className="pad pad--form" style={{ paddingTop: 24 }}>
           <button type="button" className="auth-switch" onClick={() => navigate('/fleet')}>
             ← Back to fleet
           </button>
@@ -168,15 +170,13 @@ export default function AddVehicle() {
               />
             </label>
 
-            <label className="authfield">
-              <span>Drive</span>
-              <input
-                type="text"
-                value={drive}
-                onChange={(e) => setDrive(e.target.value)}
-                placeholder="Auto"
-              />
-            </label>
+            <ComboField
+              label="Drive"
+              value={drive}
+              onChange={setDrive}
+              options={DRIVE_OPTIONS}
+              placeholder="Auto"
+            />
 
             <label className="authfield">
               <span>Distance from renter (mi)</span>
@@ -190,15 +190,13 @@ export default function AddVehicle() {
               />
             </label>
 
-            <label className="authfield">
-              <span>Badge label</span>
-              <input
-                type="text"
-                value={badge}
-                onChange={(e) => setBadge(e.target.value)}
-                placeholder="Instant book"
-              />
-            </label>
+            <ComboField
+              label="Badge label"
+              value={badge}
+              onChange={setBadge}
+              options={BADGE_OPTIONS}
+              placeholder="Instant book"
+            />
 
             <VehiclePhotoInput
               userId={user?.id}

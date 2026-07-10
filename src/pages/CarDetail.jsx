@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
-import { useBooking } from '../state/booking.jsx'
+import { useBooking } from '../state/useBooking.js'
+import { todayISODate, toISODate } from '../lib/tripDates.js'
+import { computePriceBreakdown } from '../lib/tripPricing.js'
+import { bypassInsuranceGate, DEV_COVERAGE_STUB } from '../lib/bookingFlags.js'
+import DevBookingBanner from '../components/DevBookingBanner.jsx'
 import { photoBackgroundStyle, vehicleImageStyle } from '../lib/vehicleImage.js'
 import ImageLightbox from '../components/ImageLightbox.jsx'
 import Icon from '../components/Icon.jsx'
@@ -9,7 +13,7 @@ import Icon from '../components/Icon.jsx'
 export default function CarDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { trip, selectCar } = useBooking()
+  const { trip, selectCar, setDates, setCoverage } = useBooking()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -68,11 +72,33 @@ export default function CarDetail() {
   if (!car) return <Navigate to="/" replace />
 
   const photos = car.photos?.filter(Boolean) ?? []
-  const subtotal = car.pricePerDay * trip.days
-  const serviceFee = 28
+  const breakdown = computePriceBreakdown(car, trip)
+  const { subtotal, serviceFee, deposit } = breakdown
+  const minReturn = trip.pickupDate
 
-  const goToInsurance = () => {
+  const handlePickupChange = (pickupDate) => {
+    if (!pickupDate) return
+    let returnDate = trip.returnDate
+    if (returnDate < pickupDate) {
+      const adjusted = new Date(`${pickupDate}T12:00:00`)
+      adjusted.setDate(adjusted.getDate() + (trip.days - 1))
+      returnDate = toISODate(adjusted)
+    }
+    setDates(pickupDate, returnDate)
+  }
+
+  const handleReturnChange = (returnDate) => {
+    if (!returnDate || returnDate < trip.pickupDate) return
+    setDates(trip.pickupDate, returnDate)
+  }
+
+  const continueBooking = () => {
     selectCar(car)
+    if (bypassInsuranceGate) {
+      setCoverage(DEV_COVERAGE_STUB)
+      navigate('/checkout')
+      return
+    }
     navigate('/insurance')
   }
 
@@ -119,6 +145,7 @@ export default function CarDetail() {
 
       <div className="scroll">
         <div className="pad">
+          <DevBookingBanner />
           <div className="specs">
             <div className="spec">
               <span>Seats</span>
@@ -135,17 +162,31 @@ export default function CarDetail() {
           </div>
 
           <div className="daterow">
-            <div className="datebox">
+            <label className="datebox datebox--editable">
               <span>Pick-up</span>
-              <b>{trip.pickup}</b>
-            </div>
-            <div className="datebox">
+              <input
+                type="date"
+                className="datebox-input"
+                value={trip.pickupDate}
+                min={todayISODate()}
+                onChange={(e) => handlePickupChange(e.target.value)}
+                aria-label="Pick-up date"
+              />
+            </label>
+            <label className="datebox datebox--editable">
               <span>Return</span>
-              <b>{trip.dropoff}</b>
-            </div>
+              <input
+                type="date"
+                className="datebox-input"
+                value={trip.returnDate}
+                min={minReturn}
+                onChange={(e) => handleReturnChange(e.target.value)}
+                aria-label="Return date"
+              />
+            </label>
           </div>
 
-          <button className="addins" onClick={goToInsurance}>
+          <button className="addins" onClick={continueBooking}>
             <span className="lft">
               <span className="sh">
                 <Icon name="shield" size={16} />
@@ -170,12 +211,12 @@ export default function CarDetail() {
           </div>
           <div className="rowline">
             <span>Refundable deposit</span>
-            <b>$300</b>
+            <b>${deposit}</b>
           </div>
         </div>
       </div>
 
-      <button className="cta sky" onClick={goToInsurance}>
+      <button className="cta sky" onClick={continueBooking}>
         <span>Continue</span>
         <span>${subtotal + serviceFee} total ›</span>
       </button>

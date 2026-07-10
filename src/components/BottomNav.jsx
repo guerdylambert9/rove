@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import Icon from './Icon.jsx'
 
 // `variant` switches between the renter tabs and the owner tabs.
-export default function BottomNav({ variant = 'renter' }) {
+export default function BottomNav({ variant = 'renter', inboxUnread = 0 }) {
   const navigate = useNavigate()
   const { pathname } = useLocation()
 
@@ -11,13 +11,13 @@ export default function BottomNav({ variant = 'renter' }) {
       ? [
           { icon: 'browse', label: 'Home', to: '/dashboard' },
           { icon: 'fleet', label: 'Fleet', to: '/fleet' },
-          { icon: 'trips', label: 'Trips', to: '/dashboard' },
+          { icon: 'chat', label: 'Inbox', to: '/inbox', badge: inboxUnread },
           { icon: 'account', label: 'Account', to: '/account' },
         ]
       : [
           { icon: 'browse', label: 'Browse', to: '/' },
           { icon: 'trips', label: 'Trips', to: '/trips' },
-          { icon: 'chat', label: 'Inbox', to: '/inbox' },
+          { icon: 'chat', label: 'Inbox', to: '/inbox', badge: inboxUnread },
           { icon: 'account', label: 'Account', to: '/account' },
         ]
 
@@ -33,7 +33,14 @@ export default function BottomNav({ variant = 'renter' }) {
             className={`tab ${active ? 'on' : ''}`}
             onClick={() => navigate(t.to)}
           >
-            <Icon name={t.icon} size={22} />
+            <span className="tab-icon-wrap">
+              <Icon name={t.icon} size={22} />
+              {t.badge > 0 && (
+                <span className="tab-badge">
+                  {t.badge > 9 ? '9+' : t.badge}
+                </span>
+              )}
+            </span>
             <span>{t.label}</span>
           </button>
         )

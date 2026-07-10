@@ -2,35 +2,57 @@ import { photoBackgroundStyle } from '../lib/vehicleImage.js'
 
 const MAX_COLLAGE = 3
 
-export default function CarPhotoCollage({ car, badge, onImageClick }) {
+function CollageShell({ as: Tag = 'button', disabled, className, style, onClick, ariaLabel, children }) {
+  if (disabled) {
+    return (
+      <div className={className} style={style} aria-hidden="true">
+        {children}
+      </div>
+    )
+  }
+
+  return (
+    <Tag
+      type={Tag === 'button' ? 'button' : undefined}
+      className={className}
+      style={style}
+      onClick={onClick}
+      aria-label={ariaLabel}
+    >
+      {children}
+    </Tag>
+  )
+}
+
+export default function CarPhotoCollage({ car, badge, onImageClick, disabled = false }) {
   const photos = car.photos?.filter(Boolean) ?? []
   const extra = Math.max(0, photos.length - MAX_COLLAGE)
 
   if (photos.length === 0) {
     return (
-      <button
-        type="button"
+      <CollageShell
+        disabled={disabled}
         className="carcollage carcollage-single"
         style={photoBackgroundStyle(null, car.gradient)}
         onClick={() => onImageClick?.(0)}
-        aria-label={`View ${car.name} photos`}
+        ariaLabel={`View ${car.name} photos`}
       >
         {badge}
-      </button>
+      </CollageShell>
     )
   }
 
   if (photos.length === 1) {
     return (
-      <button
-        type="button"
+      <CollageShell
+        disabled={disabled}
         className="carcollage carcollage-single"
         style={photoBackgroundStyle(photos[0], car.gradient)}
-        onClick={() => onImageClick(0)}
-        aria-label={`View ${car.name} photo`}
+        onClick={() => onImageClick?.(0)}
+        ariaLabel={`View ${car.name} photo`}
       >
         {badge}
-      </button>
+      </CollageShell>
     )
   }
 
@@ -41,18 +63,18 @@ export default function CarPhotoCollage({ car, badge, onImageClick }) {
   return (
     <div className={`carcollage ${layoutClass}`}>
       {cells.map((url, i) => (
-        <button
+        <CollageShell
           key={`${url}-${i}`}
-          type="button"
+          disabled={disabled}
           className={`carcollage-cell cell-${i}`}
           style={photoBackgroundStyle(url, car.gradient)}
-          onClick={() => onImageClick(i)}
-          aria-label={`View ${car.name} photo ${i + 1}`}
+          onClick={() => onImageClick?.(i)}
+          ariaLabel={`View ${car.name} photo ${i + 1}`}
         >
           {i === MAX_COLLAGE - 1 && extra > 0 && (
             <span className="carcollage-more">+{extra}</span>
           )}
-        </button>
+        </CollageShell>
       ))}
       <div className="carcollage-badge">{badge}</div>
     </div>

@@ -9,7 +9,7 @@
 
 This document answers three questions: **what to build first, what comes next, and why in that order.** The ordering is driven by dependencies and by risk — the riskiest, most expensive-to-get-wrong things (insurance, legal, payments) are validated early even when they aren't code, because building screens on top of an unverified insurance model is how you waste months.
 
-The current state: **Phase 1 is complete.** The app runs on Supabase (auth, profiles, vehicles), Browse and Detail load real data, owners can manage a fleet, and the frontend is deployed to Vercel (`rove-roan.vercel.app`). The booking flow (checkout → insurance → confirmed) still uses in-memory state — **Phase 2** is next.
+The current state: **Phase 1 is complete. Phase 2 is complete in code** — bookings persist as trips; renters see them on Trips, owners on Dashboard. Run `005_phase2_trips.sql` in Supabase. Payment is still simulated (Phase 3); coverage verification is pending (Phase 4).
 
 ### Progress legend
 
@@ -28,7 +28,7 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | --- | --- | --- | --- |
 | **0** Legal & insurance | ⏸ | 0% | Parallel track; gates launch, not development |
 | **1** Backend + auth | ✅ | **100%** | Supabase, auth, Browse/Detail from DB |
-| **2** Persisted booking | ⬜ | 10% | Schema + UI exist; trips not saved yet |
+| **2** Persisted booking | ✅ | **100%** | Trips + coverages saved; renter & owner views |
 | **3** Payments + deposits | ⬜ | 0% | — |
 | **4** Coverage + e-sign | ⬜ | 10% | Insurance screen mock; no backend gate |
 | **5** Identity screening | ⬜ | 5% | `identity_verified` on profiles only |
@@ -36,7 +36,7 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | **7** Dashboard + payouts | 🔄 | 15% | Real fleet list; KPIs still placeholder |
 | **8** Polish + launch | 🔄 | 25% | Fleet add/edit, photos, Vercel CLI deploy |
 
-**Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 is next in code.
+**Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 ✅ · Phase 3 is next in code.
 
 ---
 
@@ -75,9 +75,9 @@ Phase 0  Legal + insurance validation      ⏸  0%   (parallel, non-code, GATES 
    │
 Phase 1  Backend foundations + auth        ✅ 100%  ← DONE
    │
-Phase 2  Real booking flow (persisted)     ⬜  10%  ← NEXT
+Phase 2  Real booking flow (persisted)     ✅ 100%  ← DONE
    │
-Phase 3  Payments + deposits             ⬜   0%
+Phase 3  Payments + deposits             ⬜   0%  ← NEXT
    │
 Phase 4  Coverage verification + e-sign  ⬜  10%   ← the trust core
    │
@@ -133,17 +133,29 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 - [x] Production deploy via Vercel CLI (`rove-roan.vercel.app`, Flex business account)
 
 **Not wired yet** *(belongs to later phases):*
-- Trip, Coverage, Agreement, Payment tables exist in schema but have no app APIs
-- Booking flow (`booking.jsx`) is still in-memory through checkout/insurance/confirmed
+- Agreement and Payment tables exist in schema but have no app APIs
+- Checkout simulates payment (no Stripe yet — Phase 3)
+- Coverage proof upload is UI-only; verification is Phase 4
 
 ### Phase 2 — Real booking flow (persisted)
-**Status:** ⬜ Not started · **10%**
+**Status:** ✅ Complete · **100%**
 
 **Goal:** a booking becomes a real record, not just in-memory state.
 **Build:** create a Trip on booking; move it through the early lifecycle states (Requested → Coverage pending); persist dates, car, renter, price breakdown. Wire the existing `booking.jsx` context to write to the backend.
 **Done when:** a renter can book a car and the owner sees the trip appear.
 
-**Progress so far:** `trips` table and booking UI screens exist; no `createTrip` API or Trips page data yet.
+**Shipped:**
+- [x] `src/api/trips.js` — create trip, fetch renter/owner trips
+- [x] Trip + coverage row on confirm booking (`state: coverage_pending`)
+- [x] Price breakdown stored in `trips.price_breakdown` (jsonb)
+- [x] Renter **Trips** tab lists bookings
+- [x] Owner **Dashboard → Bookings** shows incoming trips
+- [x] Sign-in required to book; redirect back to checkout after login
+- [x] Migration `005_phase2_trips.sql` (coverage insert + vehicle read for trip parties)
+
+**Still simulated (later phases):**
+- Payment on checkout (Phase 3)
+- Real coverage proof storage & admin verify (Phase 4)
 
 ### Phase 3 — Payments + deposits
 **Status:** ⬜ Not started · **0%**
@@ -248,7 +260,7 @@ Since you're leaning on AI for development, a few practices that keep it product
 These are directional, assuming part-time effort with AI assistance:
 
 1. **Weeks 1–3:** Phase 0 in motion (broker + attorney) and Phase 1 backend/auth. *(Phase 1 ✅)*
-2. **Weeks 4–7:** Phases 2–3 — persisted bookings and real payments. *(current focus)*
+2. **Weeks 4–7:** Phases 2–3 — persisted bookings and real payments. *(Phase 2 ✅; Phase 3 next)*
 3. **Weeks 8–11:** Phase 4 — coverage verification + signed agreement; take your **first real booking from a known customer.**
 4. **Months 4–6:** Phases 5–7 — screening, messaging, live dashboard, payouts; widen to more of Kevin's customers.
 5. **Months 6–12:** Phase 8 and iteration — listings/calendar, reviews, deploy pipeline, and only then consider carefully widening beyond people you already trust.
