@@ -1,17 +1,22 @@
-import { createContext, useContext, useState } from 'react'
+import { useState } from 'react'
+import { defaultBookingDates, datesFromRange } from '../lib/tripDates.js'
+import { BookingContext } from './bookingContext.js'
 
-const BookingContext = createContext(null)
+const initialDates = defaultBookingDates(3)
 
 const defaultTrip = {
   car: null,
-  pickup: 'Fri, Jul 4',
-  dropoff: 'Sun, Jul 6',
-  days: 3,
+  pickupDate: initialDates.pickupDate,
+  returnDate: initialDates.returnDate,
+  pickup: initialDates.pickup,
+  dropoff: initialDates.dropoff,
+  days: initialDates.days,
   coverage: {
-    type: null,          // 'own' | 'protection'
-    proofUploaded: false, // for 'own'
+    type: null,
+    proofUploaded: false,
     acknowledged: false,
   },
+  persistedTripId: null,
 }
 
 export function BookingProvider({ children }) {
@@ -22,17 +27,18 @@ export function BookingProvider({ children }) {
   const setCoverage = (patch) =>
     setTrip((t) => ({ ...t, coverage: { ...t.coverage, ...patch } }))
 
+  const setDates = (pickupDate, returnDate) =>
+    setTrip((t) => ({ ...t, ...datesFromRange(pickupDate, returnDate) }))
+
+  const setPersistedTripId = (id) => setTrip((t) => ({ ...t, persistedTripId: id }))
+
   const reset = () => setTrip(defaultTrip)
 
   return (
-    <BookingContext.Provider value={{ trip, selectCar, setCoverage, reset }}>
+    <BookingContext.Provider
+      value={{ trip, selectCar, setCoverage, setDates, setPersistedTripId, reset }}
+    >
       {children}
     </BookingContext.Provider>
   )
-}
-
-export function useBooking() {
-  const ctx = useContext(BookingContext)
-  if (!ctx) throw new Error('useBooking must be used within a BookingProvider')
-  return ctx
 }

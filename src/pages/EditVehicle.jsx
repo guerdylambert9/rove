@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import AppBottomNav from '../components/AppBottomNav.jsx'
 import { fetchOwnerVehicle, updateVehicle } from '../api/vehicles.js'
 import VehiclePhotoInput from '../components/VehiclePhotoInput.jsx'
+import ComboField from '../components/ComboField.jsx'
+import { DRIVE_OPTIONS, BADGE_OPTIONS } from '../data/vehicleFieldOptions.js'
 import { useAuth } from '../state/auth.jsx'
 
 export default function EditVehicle() {
@@ -92,7 +94,7 @@ export default function EditVehicle() {
     return (
       <div className="page">
         <div className="scroll">
-          <div className="pad" style={{ paddingTop: 24 }}>
+          <div className="pad pad--form" style={{ paddingTop: 24 }}>
             <p className="auth-note">Loading vehicle…</p>
           </div>
         </div>
@@ -105,7 +107,7 @@ export default function EditVehicle() {
     return (
       <div className="page">
         <div className="scroll">
-          <div className="pad" style={{ paddingTop: 24 }}>
+          <div className="pad pad--form" style={{ paddingTop: 24 }}>
             <p className="auth-error">{error}</p>
             <button type="button" className="auth-switch" onClick={() => navigate('/fleet')}>
               ← Back to fleet
@@ -120,7 +122,7 @@ export default function EditVehicle() {
   return (
     <div className="page">
       <div className="scroll">
-        <div className="pad" style={{ paddingTop: 24 }}>
+        <div className="pad pad--form" style={{ paddingTop: 24 }}>
           <button type="button" className="auth-switch" onClick={() => navigate('/fleet')}>
             ← Back to fleet
           </button>
@@ -187,14 +189,13 @@ export default function EditVehicle() {
               />
             </label>
 
-            <label className="authfield">
-              <span>Drive</span>
-              <input
-                type="text"
-                value={drive}
-                onChange={(e) => setDrive(e.target.value)}
-              />
-            </label>
+            <ComboField
+              label="Drive"
+              value={drive}
+              onChange={setDrive}
+              options={DRIVE_OPTIONS}
+              placeholder="Auto"
+            />
 
             <label className="authfield">
               <span>Distance from renter (mi)</span>
@@ -207,14 +208,13 @@ export default function EditVehicle() {
               />
             </label>
 
-            <label className="authfield">
-              <span>Badge label</span>
-              <input
-                type="text"
-                value={badge}
-                onChange={(e) => setBadge(e.target.value)}
-              />
-            </label>
+            <ComboField
+              label="Badge label"
+              value={badge}
+              onChange={setBadge}
+              options={BADGE_OPTIONS}
+              placeholder="Instant book"
+            />
 
             <VehiclePhotoInput
               userId={user?.id}

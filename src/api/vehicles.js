@@ -76,6 +76,7 @@ export async function fetchVehicles() {
     .from('vehicles')
     .select('*')
     .eq('available', true)
+    .order('status')
     .order('name')
 
   if (error) throw error
@@ -92,6 +93,7 @@ export async function fetchVehicle(id) {
     .select('*')
     .eq('id', id)
     .eq('available', true)
+    .eq('status', 'idle')
     .maybeSingle()
 
   if (error) throw error
