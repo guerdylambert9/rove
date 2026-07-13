@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom'
 import { useBooking } from '../state/useBooking.js'
 import { useAuth } from '../state/auth.jsx'
 import { canUseOwnerView } from '../lib/roles.js'
+import { formatTripSchedule } from '../lib/tripTimes.js'
 import Icon from '../components/Icon.jsx'
 
 export default function Confirmed() {
@@ -9,6 +10,7 @@ export default function Confirmed() {
   const { user, profile } = useAuth()
   const { trip, reset } = useBooking()
   const host = trip.car?.host || 'your host'
+  const scheduleLabel = formatTripSchedule(trip)
 
   const viewTrip = () => {
     reset()
@@ -39,9 +41,7 @@ export default function Confirmed() {
           </div>
           <div>
             <div className="tt">Pickup</div>
-            <div className="dd">
-              {trip.pickup} – {trip.dropoff} · Downtown WPB
-            </div>
+            <div className="dd">{scheduleLabel} · Downtown WPB</div>
           </div>
         </div>
         <div className="li">

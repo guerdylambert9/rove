@@ -1,13 +1,16 @@
+import { formatShortReturn } from './tripDates.js'
+
+/** Trip is actively using the vehicle today (pickup ≤ today ≤ return). */
 export function isVehicleBooked(car) {
-  return car?.status === 'rented'
+  return Boolean(car?.activeReturnDate)
 }
 
-/** e.g. "Booked until Sat Jul 11" from synced status_label */
+/** e.g. "Booked until Jul 11" */
 export function vehicleBookedLabel(car) {
   if (!isVehicleBooked(car)) return null
+  return `Booked until ${formatShortReturn(car.activeReturnDate)}`
+}
 
-  const match = car.statusLabel?.match(/returns\s+(.+)$/i)
-  if (match) return `Booked until ${match[1]}`
-
-  return 'Currently booked'
+export function ownerRentedLabel(returnDate) {
+  return `Rented · returns ${formatShortReturn(returnDate)}`
 }

@@ -3,9 +3,11 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
 import { useBooking } from '../state/useBooking.js'
 import { todayISODate, toISODate } from '../lib/tripDates.js'
+import { formatTripSchedule } from '../lib/tripTimes.js'
 import { computePriceBreakdown } from '../lib/tripPricing.js'
 import { bypassInsuranceGate, DEV_COVERAGE_STUB } from '../lib/bookingFlags.js'
 import DevBookingBanner from '../components/DevBookingBanner.jsx'
+import TripTimeSelect from '../components/TripTimeSelect.jsx'
 import { photoBackgroundStyle, vehicleImageStyle } from '../lib/vehicleImage.js'
 import ImageLightbox from '../components/ImageLightbox.jsx'
 import Icon from '../components/Icon.jsx'
@@ -13,7 +15,7 @@ import Icon from '../components/Icon.jsx'
 export default function CarDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { trip, selectCar, setDates, setCoverage } = useBooking()
+  const { trip, selectCar, setDates, setTimes, setCoverage } = useBooking()
   const [car, setCar] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -75,6 +77,8 @@ export default function CarDetail() {
   const breakdown = computePriceBreakdown(car, trip)
   const { subtotal, serviceFee, deposit } = breakdown
   const minReturn = trip.pickupDate
+  const sameDay = trip.pickupDate === trip.returnDate
+  const scheduleLabel = formatTripSchedule(trip)
 
   const handlePickupChange = (pickupDate) => {
     if (!pickupDate) return
@@ -90,6 +94,14 @@ export default function CarDetail() {
   const handleReturnChange = (returnDate) => {
     if (!returnDate || returnDate < trip.pickupDate) return
     setDates(trip.pickupDate, returnDate)
+  }
+
+  const handlePickupTimeChange = (pickupTime) => {
+    setTimes(pickupTime, trip.returnTime)
+  }
+
+  const handleReturnTimeChange = (returnTime) => {
+    setTimes(trip.pickupTime, returnTime)
   }
 
   const continueBooking = () => {
@@ -186,6 +198,22 @@ export default function CarDetail() {
             </label>
           </div>
 
+          <div className="timerow">
+            <TripTimeSelect
+              id="pickup-time"
+              label="Pickup time"
+              value={trip.pickupTime}
+              onChange={handlePickupTimeChange}
+            />
+            <TripTimeSelect
+              id="return-time"
+              label="Return by"
+              value={trip.returnTime}
+              onChange={handleReturnTimeChange}
+              minValue={sameDay ? trip.pickupTime : undefined}
+            />
+          </div>
+
           <button className="addins" onClick={continueBooking}>
             <span className="lft">
               <span className="sh">
@@ -205,6 +233,7 @@ export default function CarDetail() {
             </span>
             <b>${subtotal}</b>
           </div>
+          <p className="auth-note schedule-note">{scheduleLabel}</p>
           <div className="rowline">
             <span>Service fee</span>
             <b>${serviceFee}</b>

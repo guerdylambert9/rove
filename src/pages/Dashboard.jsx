@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchOwnerVehicles } from '../api/vehicles.js'
 import { fetchOwnerTrips } from '../api/trips.js'
 import { vehicleImageStyle } from '../lib/vehicleImage.js'
 import AppBottomNav from '../components/AppBottomNav.jsx'
 import TripCard from '../components/TripCard.jsx'
+import {
+  defaultBookingYear,
+  getBookingYears,
+  groupTripsByMonth,
+} from '../lib/groupTripsByMonth.js'
 import { useAuth } from '../state/auth.jsx'
 
 export default function Dashboard() {
@@ -14,6 +19,7 @@ export default function Dashboard() {
   const [trips, setTrips] = useState([])
   const [loadingFleet, setLoadingFleet] = useState(true)
   const [loadingTrips, setLoadingTrips] = useState(true)
+  const [bookingYear, setBookingYear] = useState(() => new Date().getFullYear())
 
   useEffect(() => {
     if (!user) return
@@ -40,6 +46,17 @@ export default function Dashboard() {
     }
   }, [user])
 
+  const bookingYears = useMemo(() => getBookingYears(trips), [trips])
+
+  useEffect(() => {
+    if (trips.length === 0) return
+    setBookingYear((prev) => {
+      const years = getBookingYears(trips)
+      if (years.includes(prev)) return prev
+      return defaultBookingYear(trips)
+    })
+  }, [trips])
+
   const avgRate =
     cars.length > 0
       ? Math.round(cars.reduce((sum, c) => sum + c.pricePerDay, 0) / cars.length)
@@ -48,6 +65,9 @@ export default function Dashboard() {
   const activeTrips = trips.filter(
     (t) => !['completed', 'cancelled', 'deposit_released'].includes(t.state),
   )
+
+  const bookingGroups = groupTripsByMonth(trips, { year: bookingYear })
+  const yearTripCount = bookingGroups.reduce((sum, g) => sum + g.trips.length, 0)
 
   return (
     <div className="page">
@@ -82,13 +102,40 @@ export default function Dashboard() {
         </div>
 
         <div className="pad" style={{ paddingTop: 4 }}>
-          <div className="sectitle">Bookings</div>
+          <div className="sectitle bookings-head">
+            <span>Bookings</span>
+            {bookingYears.length > 0 && (
+              <label className="bookings-year">
+                <span className="sr-only">Booking year</span>
+                <select
+                  className="bookings-year-select"
+                  value={bookingYear}
+                  onChange={(e) => setBookingYear(Number(e.target.value))}
+                  aria-label="Filter bookings by year"
+                >
+                  {bookingYears.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
           {loadingTrips && <p className="auth-note">Loading bookings…</p>}
           {!loadingTrips && trips.length === 0 && (
             <p className="auth-note">No bookings yet. They’ll appear here when renters book your cars.</p>
           )}
-          {trips.slice(0, 5).map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
+          {!loadingTrips && trips.length > 0 && yearTripCount === 0 && (
+            <p className="auth-note">No bookings in {bookingYear}.</p>
+          )}
+          {bookingGroups.map((group) => (
+            <section key={group.key} className="booking-group">
+              <h2 className="booking-month">{group.label}</h2>
+              {group.trips.map((trip) => (
+                <TripCard key={trip.id} trip={trip} />
+              ))}
+            </section>
           ))}
 
           <div className="sectitle" style={{ marginTop: 20 }}>

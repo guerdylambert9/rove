@@ -5,6 +5,7 @@ import { useAuth } from '../state/auth.jsx'
 import { vehicleImageStyle } from '../lib/vehicleImage.js'
 import { computePriceBreakdown } from '../lib/tripPricing.js'
 import { createTrip } from '../api/trips.js'
+import { formatTripSchedule } from '../lib/tripTimes.js'
 import {
   bypassInsuranceGate,
   bypassPaymentGate,
@@ -34,6 +35,8 @@ export default function Checkout() {
         : 'Rové protection'
       : 'Own policy (pending verification)'
 
+  const scheduleLabel = formatTripSchedule(trip)
+
   const handleBook = async () => {
     setError('')
 
@@ -59,6 +62,8 @@ export default function Checkout() {
         renterId: user.id,
         pickupDate: trip.pickupDate,
         returnDate: trip.returnDate,
+        pickupTime: trip.pickupTime,
+        returnTime: trip.returnTime,
         days: trip.days,
         coverage,
         priceBreakdown: breakdown,
@@ -84,9 +89,7 @@ export default function Checkout() {
               <div className="thumb" style={vehicleImageStyle(car)} />
               <div>
                 <div className="nm">{car.name}</div>
-                <div className="sm">
-                  {trip.pickup} – {trip.dropoff} · West Palm Beach
-                </div>
+                <div className="sm">{scheduleLabel} · West Palm Beach</div>
               </div>
             </div>
             <div className="divide" />

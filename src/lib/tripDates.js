@@ -45,6 +45,13 @@ export function datesFromRange(pickupIso, returnIso) {
   }
 }
 
+export function formatShortReturn(isoDate) {
+  return new Date(`${isoDate}T12:00:00`).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
 export function todayISODate() {
   return toISODate(new Date())
 }

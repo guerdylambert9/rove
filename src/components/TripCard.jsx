@@ -20,7 +20,7 @@ export default function TripCard({ trip }) {
       <div className="trip-card-body">
         <div className="nm">{displayName}</div>
         <div className="sm">
-          {trip.pickup} – {trip.dropoff} · {trip.days} days
+          {trip.schedule ?? `${trip.pickup} – ${trip.dropoff}`} · {trip.days} days
         </div>
         <div className={`trip-state trip-state--${trip.state}`}>
           {tripStateLabel(trip.state)}

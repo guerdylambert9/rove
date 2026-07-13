@@ -1,4 +1,8 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
+import { ownerRentedLabel } from '../lib/vehicleAvailability.js'
+import { todayISODate } from '../lib/tripDates.js'
+
+const INACTIVE_TRIP_STATES = ['cancelled', 'completed', 'deposit_released']
 
 function mapVehicle(row) {
   return {
@@ -21,6 +25,50 @@ function mapVehicle(row) {
     photos: row.photos ?? [],
     available: row.available,
   }
+}
+
+async function fetchActiveReturnDates(today = todayISODate()) {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('vehicle_id, return_date')
+    .not('state', 'in', `(${INACTIVE_TRIP_STATES.map((s) => `"${s}"`).join(',')})`)
+    .lte('pickup_date', today)
+    .gte('return_date', today)
+
+  if (error) throw error
+
+  const byVehicle = new Map()
+  for (const trip of data ?? []) {
+    const current = byVehicle.get(trip.vehicle_id)
+    if (!current || trip.return_date > current) {
+      byVehicle.set(trip.vehicle_id, trip.return_date)
+    }
+  }
+  return byVehicle
+}
+
+function applyActiveTripStatus(vehicle, activeReturns) {
+  const returnDate = activeReturns.get(vehicle.id)
+  if (!returnDate) {
+    return {
+      ...vehicle,
+      status: 'idle',
+      statusLabel: 'Idle · open now',
+      activeReturnDate: null,
+    }
+  }
+
+  return {
+    ...vehicle,
+    status: 'rented',
+    statusLabel: ownerRentedLabel(returnDate),
+    activeReturnDate: returnDate,
+  }
+}
+
+async function enrichWithActiveTripStatus(vehicles) {
+  const activeReturns = await fetchActiveReturnDates()
+  return vehicles.map((v) => applyActiveTripStatus(v, activeReturns))
 }
 
 function mapVehicleToRow(vehicle) {
@@ -80,7 +128,11 @@ export async function fetchVehicles() {
     .order('name')
 
   if (error) throw error
-  return data.map(mapVehicle)
+  const vehicles = await enrichWithActiveTripStatus(data.map(mapVehicle))
+  return vehicles.sort((a, b) => {
+    if (a.status !== b.status) return a.status === 'idle' ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
 }
 
 export async function fetchVehicle(id) {
@@ -93,11 +145,13 @@ export async function fetchVehicle(id) {
     .select('*')
     .eq('id', id)
     .eq('available', true)
-    .eq('status', 'idle')
     .maybeSingle()
 
   if (error) throw error
-  return data ? mapVehicle(data) : null
+  if (!data) return null
+
+  const [vehicle] = await enrichWithActiveTripStatus([mapVehicle(data)])
+  return vehicle
 }
 
 export async function fetchOwnerVehicles(ownerId) {
@@ -112,7 +166,7 @@ export async function fetchOwnerVehicles(ownerId) {
     .order('name')
 
   if (error) throw error
-  return data.map(mapVehicle)
+  return enrichWithActiveTripStatus(data.map(mapVehicle))
 }
 
 export async function fetchOwnerVehicle(id, ownerId) {
@@ -128,7 +182,9 @@ export async function fetchOwnerVehicle(id, ownerId) {
     .maybeSingle()
 
   if (error) throw error
-  return data ? mapVehicle(data) : null
+  if (!data) return null
+  const [vehicle] = await enrichWithActiveTripStatus([mapVehicle(data)])
+  return vehicle
 }
 
 function mapVehicleUpdateToRow(vehicle) {

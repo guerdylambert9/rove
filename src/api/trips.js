@@ -1,5 +1,6 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { formatTripDate } from '../lib/tripDates.js'
+import { formatTripSchedule, normalizeTripTime } from '../lib/tripTimes.js'
 
 function mapVehicle(row) {
   if (!row) return null
@@ -25,8 +26,16 @@ function mapTrip(row) {
     ownerId: row.owner_id,
     pickupDate: row.pickup_date,
     returnDate: row.return_date,
+    pickupTime: normalizeTripTime(row.pickup_time),
+    returnTime: normalizeTripTime(row.return_time),
     pickup: formatTripDate(row.pickup_date),
     dropoff: formatTripDate(row.return_date),
+    schedule: formatTripSchedule({
+      pickupDate: row.pickup_date,
+      returnDate: row.return_date,
+      pickupTime: row.pickup_time,
+      returnTime: row.return_time,
+    }),
     days: row.days,
     state: row.state,
     priceBreakdown: breakdown,
@@ -55,6 +64,8 @@ export async function createTrip({
   renterId,
   pickupDate,
   returnDate,
+  pickupTime,
+  returnTime,
   days,
   coverage,
   priceBreakdown,
@@ -84,6 +95,8 @@ export async function createTrip({
       owner_id: ownerId,
       pickup_date: pickupDate,
       return_date: returnDate,
+      pickup_time: normalizeTripTime(pickupTime),
+      return_time: normalizeTripTime(returnTime),
       days,
       state: 'coverage_pending',
       price_breakdown: priceBreakdown,
