@@ -1,16 +1,39 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useBooking } from '../state/useBooking.js'
 import { useAuth } from '../state/auth.jsx'
 import { canUseOwnerView } from '../lib/roles.js'
 import { formatTripSchedule } from '../lib/tripTimes.js'
+import { fetchTrip } from '../api/trips.js'
+import { paymentSummary } from '../lib/paymentStatus.js'
 import Icon from '../components/Icon.jsx'
 
 export default function Confirmed() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user, profile } = useAuth()
   const { trip, reset } = useBooking()
-  const host = trip.car?.host || 'your host'
-  const scheduleLabel = formatTripSchedule(trip)
+  const [loadedTrip, setLoadedTrip] = useState(null)
+
+  const tripId = searchParams.get('trip_id') ?? trip.persistedTripId
+
+  useEffect(() => {
+    if (!tripId) return
+    let cancelled = false
+    fetchTrip(tripId).then((data) => {
+      if (!cancelled) setLoadedTrip(data)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [tripId])
+
+  const displayTrip = loadedTrip ?? trip
+  const host = loadedTrip?.vehicle?.host ?? trip.car?.host ?? 'your host'
+  const scheduleLabel = loadedTrip
+    ? loadedTrip.schedule
+    : formatTripSchedule(trip)
+  const payLine = paymentSummary(loadedTrip?.payment)
 
   const viewTrip = () => {
     reset()
@@ -27,10 +50,13 @@ export default function Confirmed() {
         <div className="tick">
           <Icon name="check" size={30} stroke="#fff" />
         </div>
-        <h1>You’re booked</h1>
+        <h1>You&apos;re booked</h1>
         <p>
-          {host} will see your request. Coverage verification is next (Phase 4) —
-          pickup details follow once that clears.
+          {payLine
+            ? `${payLine}. `
+            : ''}
+          {host} will see your request. Coverage verification is next — pickup
+          details follow once that clears.
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-import { formatTripDate } from './tripDates.js'
+import { formatTripDate, todayISODate } from './tripDates.js'
 
 export const TRIP_TIME_OPTIONS = [
   { value: '08:00', label: '8:00 AM' },
@@ -46,6 +46,38 @@ export function formatTripSchedule({
   }
 
   return `${pickup} · ${pickupAt} – ${dropoff} · return by ${returnBy}`
+}
+
+export function currentTimeHHMM(now = new Date()) {
+  const h = String(now.getHours()).padStart(2, '0')
+  const m = String(now.getMinutes()).padStart(2, '0')
+  return `${h}:${m}`
+}
+
+/** Pickup slots still available on pickupDate (filters past times when date is today). */
+export function pickupTimeOptionsForDate(pickupDateIso, now = new Date()) {
+  if (pickupDateIso !== todayISODate(now)) {
+    return TRIP_TIME_OPTIONS
+  }
+
+  const nowTime = currentTimeHHMM(now)
+  return TRIP_TIME_OPTIONS.filter((o) => o.value > nowTime)
+}
+
+export function isPickupTimeValid(pickupDateIso, pickupTime, now = new Date()) {
+  if (pickupDateIso !== todayISODate(now)) return true
+  const options = pickupTimeOptionsForDate(pickupDateIso, now)
+  if (options.length === 0) return false
+  return options.some((o) => o.value === normalizeTripTime(pickupTime))
+}
+
+/** Bump to earliest still-valid pickup time for the date. */
+export function clampPickupTime(pickupDateIso, pickupTime, now = new Date()) {
+  const options = pickupTimeOptionsForDate(pickupDateIso, now)
+  if (options.length === 0) return pickupTime
+  const normalized = normalizeTripTime(pickupTime)
+  if (options.some((o) => o.value === normalized)) return normalized
+  return options[0].value
 }
 
 export function isReturnTimeValid(pickupDate, returnDate, pickupTime, returnTime) {

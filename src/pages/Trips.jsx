@@ -113,7 +113,7 @@ export default function Trips() {
             <section key={group.key} className="booking-group">
               <h2 className="booking-month">{group.label}</h2>
               {group.trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
+                <TripCard key={trip.id} trip={trip} role="renter" />
               ))}
             </section>
           ))}

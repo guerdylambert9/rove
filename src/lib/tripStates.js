@@ -1,5 +1,6 @@
 const LABELS = {
   requested: 'Requested',
+  payment_pending: 'Awaiting payment',
   coverage_pending: 'Coverage pending',
   coverage_verified: 'Coverage verified',
   agreement_signed: 'Agreement signed',

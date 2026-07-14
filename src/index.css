@@ -563,6 +563,22 @@ a {
   margin-bottom: 0;
   font-size: 12px;
 }
+.timebox--disabled {
+  opacity: 0.85;
+}
+.timebox-empty {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--slate);
+}
+.addins:disabled,
+.cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 /* ---- Insurance row on detail ---- */
 .addins {
@@ -1063,14 +1079,63 @@ a {
   background: #fff6e6;
   color: #b8860b;
 }
+.trip-state--payment_pending {
+  background: #f3eeff;
+  color: #6b4fc7;
+}
+.trip-pay {
+  margin-top: 4px;
+  color: var(--slate);
+  font-size: 10px;
+}
 .trip-state--confirmed,
 .trip-state--in_progress {
   background: #e8f8ef;
   color: #1a9e5f;
 }
+.trip-state--returned,
+.trip-state--deposit_released,
+.trip-state--completed {
+  background: #eef2f6;
+  color: #5b6b7b;
+}
 .trip-state--cancelled {
   background: #fdeeee;
   color: #c44;
+}
+.trip-return-note {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.trip-return-note--due_soon {
+  color: #b8860b;
+}
+.trip-return-note--late {
+  color: #c44;
+}
+.trip-return-btn {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.trip-return-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.trip-action-error {
+  margin-top: 6px;
+  margin-bottom: 0;
+  font-size: 11px;
 }
 
 /* ---- Notifications / Inbox ---- */

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
 import { useBooking } from '../state/useBooking.js'
 import { todayISODate, toISODate } from '../lib/tripDates.js'
-import { formatTripSchedule } from '../lib/tripTimes.js'
+import { formatTripSchedule, pickupTimeOptionsForDate } from '../lib/tripTimes.js'
 import { computePriceBreakdown } from '../lib/tripPricing.js'
 import { bypassInsuranceGate, DEV_COVERAGE_STUB } from '../lib/bookingFlags.js'
 import DevBookingBanner from '../components/DevBookingBanner.jsx'
@@ -48,6 +48,14 @@ export default function CarDetail() {
     }
   }, [id])
 
+  useEffect(() => {
+    const options = pickupTimeOptionsForDate(trip.pickupDate)
+    if (options.length === 0) return
+    if (!options.some((o) => o.value === trip.pickupTime)) {
+      setTimes(options[0].value, trip.returnTime)
+    }
+  }, [trip.pickupDate, trip.pickupTime, trip.returnTime, setTimes])
+
   if (loading) {
     return (
       <div className="page">
@@ -78,6 +86,9 @@ export default function CarDetail() {
   const { subtotal, serviceFee, deposit } = breakdown
   const minReturn = trip.pickupDate
   const sameDay = trip.pickupDate === trip.returnDate
+  const pickupOptions = pickupTimeOptionsForDate(trip.pickupDate)
+  const noPickupTimesToday = pickupOptions.length === 0
+  const unownedListing = !car.ownerId
   const scheduleLabel = formatTripSchedule(trip)
 
   const handlePickupChange = (pickupDate) => {
@@ -105,6 +116,7 @@ export default function CarDetail() {
   }
 
   const continueBooking = () => {
+    if (noPickupTimesToday || unownedListing) return
     selectCar(car)
     if (bypassInsuranceGate) {
       setCoverage(DEV_COVERAGE_STUB)
@@ -204,6 +216,8 @@ export default function CarDetail() {
               label="Pickup time"
               value={trip.pickupTime}
               onChange={handlePickupTimeChange}
+              options={pickupOptions}
+              emptyLabel="No times left today"
             />
             <TripTimeSelect
               id="return-time"
@@ -213,8 +227,23 @@ export default function CarDetail() {
               minValue={sameDay ? trip.pickupTime : undefined}
             />
           </div>
+          {noPickupTimesToday && (
+            <p className="auth-error">
+              No pickup times left today — choose tomorrow or a later date.
+            </p>
+          )}
+          {unownedListing && (
+            <p className="auth-error">
+              This listing has no owner assigned yet — it can&apos;t be booked. Try another
+              vehicle or assign an owner in Supabase.
+            </p>
+          )}
 
-          <button className="addins" onClick={continueBooking}>
+          <button
+            className="addins"
+            onClick={continueBooking}
+            disabled={noPickupTimesToday || unownedListing}
+          >
             <span className="lft">
               <span className="sh">
                 <Icon name="shield" size={16} />
@@ -245,7 +274,11 @@ export default function CarDetail() {
         </div>
       </div>
 
-      <button className="cta sky" onClick={continueBooking}>
+      <button
+        className="cta sky"
+        onClick={continueBooking}
+        disabled={noPickupTimesToday || unownedListing}
+      >
         <span>Continue</span>
         <span>${subtotal + serviceFee} total ›</span>
       </button>
