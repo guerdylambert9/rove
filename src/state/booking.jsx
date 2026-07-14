@@ -10,13 +10,25 @@ import {
 import { BookingContext } from './bookingContext.js'
 
 const initialDates = defaultBookingDates(3)
+const initialPickupTime = clampPickupTime(
+  initialDates.pickupDate,
+  DEFAULT_PICKUP_TIME,
+)
+const initialReturnTime = isReturnTimeValid(
+  initialDates.pickupDate,
+  initialDates.returnDate,
+  initialPickupTime,
+  DEFAULT_RETURN_TIME,
+)
+  ? DEFAULT_RETURN_TIME
+  : nextReturnTimeAfter(initialPickupTime)
 
 const defaultTrip = {
   car: null,
   pickupDate: initialDates.pickupDate,
   returnDate: initialDates.returnDate,
-  pickupTime: DEFAULT_PICKUP_TIME,
-  returnTime: DEFAULT_RETURN_TIME,
+  pickupTime: initialPickupTime,
+  returnTime: initialReturnTime,
   pickup: initialDates.pickup,
   dropoff: initialDates.dropoff,
   days: initialDates.days,

@@ -53,6 +53,11 @@ export default function Trips() {
     })
   }, [trips])
 
+  const refreshTrips = () => {
+    if (!user) return
+    fetchRenterTrips(user.id).then(setTrips)
+  }
+
   const tripGroups = groupTripsByMonth(trips, { year: tripYear })
   const yearTripCount = tripGroups.reduce((sum, g) => sum + g.trips.length, 0)
 
@@ -113,7 +118,12 @@ export default function Trips() {
             <section key={group.key} className="booking-group">
               <h2 className="booking-month">{group.label}</h2>
               {group.trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} role="renter" />
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  role="renter"
+                  onUpdated={refreshTrips}
+                />
               ))}
             </section>
           ))}

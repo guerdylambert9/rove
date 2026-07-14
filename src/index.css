@@ -1128,6 +1128,20 @@ a {
   font-weight: 600;
   cursor: pointer;
 }
+.trip-return-btn--primary {
+  background: var(--sky);
+  border-color: var(--sky);
+  color: #fff;
+}
+.trip-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.trip-card-actions .trip-return-btn {
+  margin-top: 4px;
+}
 .trip-return-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;

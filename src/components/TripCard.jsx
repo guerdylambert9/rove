@@ -4,8 +4,8 @@ import { tripStateLabel } from '../lib/tripStates.js'
 import { formatMoney } from '../lib/tripPricing.js'
 import { paymentSummary } from '../lib/paymentStatus.js'
 import { canOwnerMarkReturned, getReturnTiming } from '../lib/tripReturn.js'
-import { markTripReturned } from '../api/trips.js'
-import { releaseTripDeposit } from '../api/payments.js'
+import { cancelPaymentPendingTrip, markTripReturned } from '../api/trips.js'
+import { releaseTripDeposit, startCheckoutSession } from '../api/payments.js'
 
 export default function TripCard({ trip, role = 'renter', onUpdated }) {
   const car = trip.vehicle
@@ -13,6 +13,7 @@ export default function TripCard({ trip, role = 'renter', onUpdated }) {
   const payLine = paymentSummary(trip.payment)
   const timing = getReturnTiming(trip)
   const showMarkReturned = role === 'owner' && canOwnerMarkReturned(trip)
+  const showPaymentActions = role === 'renter' && trip.state === 'payment_pending'
 
   const [busy, setBusy] = useState(false)
   const [actionError, setActionError] = useState('')
@@ -32,6 +33,31 @@ export default function TripCard({ trip, role = 'renter', onUpdated }) {
       onUpdated?.()
     } catch (err) {
       setActionError(err.message || 'Could not mark returned')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleCompletePayment = async () => {
+    setActionError('')
+    setBusy(true)
+    try {
+      const { url } = await startCheckoutSession(trip.id)
+      window.location.href = url
+    } catch (err) {
+      setActionError(err.message || 'Could not resume checkout')
+      setBusy(false)
+    }
+  }
+
+  const handleCancelPending = async () => {
+    setActionError('')
+    setBusy(true)
+    try {
+      await cancelPaymentPendingTrip(trip.id)
+      onUpdated?.()
+    } catch (err) {
+      setActionError(err.message || 'Could not cancel booking')
     } finally {
       setBusy(false)
     }
@@ -74,6 +100,26 @@ export default function TripCard({ trip, role = 'renter', onUpdated }) {
           >
             {busy ? 'Updating…' : 'Mark returned'}
           </button>
+        )}
+        {showPaymentActions && (
+          <div className="trip-card-actions">
+            <button
+              type="button"
+              className="trip-return-btn trip-return-btn--primary"
+              onClick={handleCompletePayment}
+              disabled={busy}
+            >
+              {busy ? 'Opening…' : 'Complete payment'}
+            </button>
+            <button
+              type="button"
+              className="trip-return-btn"
+              onClick={handleCancelPending}
+              disabled={busy}
+            >
+              Cancel hold
+            </button>
+          </div>
         )}
         {actionError && <p className="auth-error trip-action-error">{actionError}</p>}
       </div>

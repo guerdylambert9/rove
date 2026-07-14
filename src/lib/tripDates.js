@@ -13,7 +13,8 @@ export function formatTripDate(isoDate) {
   })
 }
 
-export function defaultBookingDates(days = 3, leadDays = 7) {
+/** Default trip: start today (or next bookable day), lasting `days` calendar days. */
+export function defaultBookingDates(days = 3, leadDays = 0) {
   const pickup = new Date()
   pickup.setDate(pickup.getDate() + leadDays)
   const returnDate = new Date(pickup)

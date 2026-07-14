@@ -125,15 +125,57 @@ export async function createTrip({
 
   const { data: conflicts, error: conflictError } = await supabase
     .from('trips')
-    .select('id')
+    .select('id, renter_id, state')
     .eq('vehicle_id', vehicleId)
     .not('state', 'in', '("cancelled","completed","deposit_released","returned")')
     .lte('pickup_date', returnDate)
     .gte('return_date', pickupDate)
 
   if (conflictError) throw conflictError
+
   if (conflicts?.length > 0) {
-    throw new Error('This vehicle is already booked for those dates')
+    const ownPending = conflicts.filter(
+      (t) => t.renter_id === renterId && t.state === 'payment_pending',
+    )
+    const blockers = conflicts.filter(
+      (t) => !(t.renter_id === renterId && t.state === 'payment_pending'),
+    )
+
+    if (blockers.length > 0) {
+      throw new Error('This vehicle is already booked for those dates')
+    }
+
+    // Same renter abandoned Stripe — resume the existing pending trip
+    if (ownPending.length > 0) {
+      const resumeId = ownPending[0].id
+      await supabase
+        .from('trips')
+        .update({
+          pickup_date: pickupDate,
+          return_date: returnDate,
+          pickup_time: normalizeTripTime(pickupTime),
+          return_time: normalizeTripTime(returnTime),
+          days,
+          price_breakdown: priceBreakdown,
+        })
+        .eq('id', resumeId)
+        .eq('state', 'payment_pending')
+
+      if (awaitPayment) {
+        const chargeAmount = tripChargeAmount(priceBreakdown)
+        await supabase
+          .from('payments')
+          .update({
+            amount: chargeAmount,
+            charge_amount: chargeAmount,
+            deposit_amount: priceBreakdown.deposit,
+            payment_status: 'pending',
+          })
+          .eq('trip_id', resumeId)
+      }
+
+      return fetchTrip(resumeId)
+    }
   }
 
   const initialState = awaitPayment ? 'payment_pending' : 'coverage_pending'
@@ -246,6 +288,30 @@ export async function markTripReturned(tripId) {
 
   if (error) throw error
   if (!data) throw new Error('Trip could not be marked returned')
+
+  return fetchTrip(tripId)
+}
+
+/** Renter cancels an unpaid checkout hold so dates become bookable again. */
+export async function cancelPaymentPendingTrip(tripId) {
+  if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
+  if (!tripId) throw new Error('Trip id required')
+
+  const { data, error } = await supabase
+    .from('trips')
+    .update({ state: 'cancelled' })
+    .eq('id', tripId)
+    .eq('state', 'payment_pending')
+    .select('id')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) throw new Error('Trip could not be cancelled')
+
+  await supabase
+    .from('payments')
+    .update({ payment_status: 'failed' })
+    .eq('trip_id', tripId)
 
   return fetchTrip(tripId)
 }

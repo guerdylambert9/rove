@@ -1,4 +1,5 @@
 import { formatTripTime, normalizeTripTime, DEFAULT_RETURN_TIME } from './tripTimes.js'
+import { todayISODate } from './tripDates.js'
 
 const ENDED_STATES = new Set([
   'returned',
@@ -32,13 +33,26 @@ export function tripPickupAt(trip) {
   return new Date(`${date}T${time}:00`)
 }
 
-/** Whether this trip still occupies the vehicle for browse/fleet. */
+/**
+ * Whether this trip blocks browse/fleet as rented.
+ * Paid/active trips hold the car for the whole booked day range until return time
+ * (not only after pickup time — otherwise a 4 PM booking looks free at 3:59).
+ */
 export function isTripOccupyingVehicle(trip, now = new Date()) {
   const state = trip.state
   if (!state || ENDED_STATES.has(state) || state === 'payment_pending') {
     return false
   }
-  return tripPickupAt(trip) <= now && tripReturnAt(trip) > now
+
+  const pickupDate = trip.pickupDate ?? trip.pickup_date
+  const returnDate = trip.returnDate ?? trip.return_date
+  if (!pickupDate || !returnDate) return false
+
+  const today = todayISODate(now)
+  if (pickupDate > today || returnDate < today) return false
+
+  // Free the listing once scheduled return time has passed
+  return tripReturnAt(trip) > now
 }
 
 /**
