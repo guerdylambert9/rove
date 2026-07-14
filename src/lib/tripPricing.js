@@ -22,6 +22,15 @@ export function computePriceBreakdown(car, { days, coverage }) {
   }
 }
 
+/** Amount charged at checkout (excludes refundable deposit hold). */
+export function tripChargeAmount(breakdown) {
+  return (
+    Number(breakdown.subtotal ?? 0) +
+    Number(breakdown.serviceFee ?? 0) +
+    Number(breakdown.protection ?? 0)
+  )
+}
+
 export function formatMoney(amount) {
   return `$${Number(amount).toLocaleString('en-US', { maximumFractionDigits: 0 })}`
 }

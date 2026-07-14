@@ -1,12 +1,32 @@
 import { TRIP_TIME_OPTIONS } from '../lib/tripTimes.js'
 
-export default function TripTimeSelect({ label, value, onChange, id, minValue }) {
+export default function TripTimeSelect({
+  label,
+  value,
+  onChange,
+  id,
+  minValue,
+  options: optionsProp,
+  emptyLabel = 'No times available',
+}) {
+  const base = optionsProp ?? TRIP_TIME_OPTIONS
   const options =
     minValue != null
-      ? TRIP_TIME_OPTIONS.filter((o) => o.value > minValue)
-      : TRIP_TIME_OPTIONS
+      ? base.filter((o) => o.value > minValue)
+      : base
 
-  const safeOptions = options.length > 0 ? options : TRIP_TIME_OPTIONS
+  if (options.length === 0) {
+    return (
+      <label className="timebox timebox--disabled" htmlFor={id}>
+        <span>{label}</span>
+        <span className="timebox-empty">{emptyLabel}</span>
+      </label>
+    )
+  }
+
+  const selected = options.some((o) => o.value === value)
+    ? value
+    : options[0].value
 
   return (
     <label className="timebox" htmlFor={id}>
@@ -14,10 +34,10 @@ export default function TripTimeSelect({ label, value, onChange, id, minValue })
       <select
         id={id}
         className="timebox-select"
-        value={safeOptions.some((o) => o.value === value) ? value : safeOptions[0].value}
+        value={selected}
         onChange={(e) => onChange(e.target.value)}
       >
-        {safeOptions.map((opt) => (
+        {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}
           </option>

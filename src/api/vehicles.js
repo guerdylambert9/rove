@@ -1,8 +1,16 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { ownerRentedLabel } from '../lib/vehicleAvailability.js'
 import { todayISODate } from '../lib/tripDates.js'
+import { isTripOccupyingVehicle } from '../lib/tripReturn.js'
+import { normalizeTripTime } from '../lib/tripTimes.js'
 
-const INACTIVE_TRIP_STATES = ['cancelled', 'completed', 'deposit_released']
+const INACTIVE_TRIP_STATES = [
+  'cancelled',
+  'completed',
+  'deposit_released',
+  'payment_pending',
+  'returned',
+]
 
 function mapVehicle(row) {
   return {
@@ -27,10 +35,11 @@ function mapVehicle(row) {
   }
 }
 
-async function fetchActiveReturnDates(today = todayISODate()) {
+async function fetchActiveReturnDates(now = new Date()) {
+  const today = todayISODate(now)
   const { data, error } = await supabase
     .from('trips')
-    .select('vehicle_id, return_date')
+    .select('vehicle_id, return_date, return_time, pickup_date, pickup_time, state')
     .not('state', 'in', `(${INACTIVE_TRIP_STATES.map((s) => `"${s}"`).join(',')})`)
     .lte('pickup_date', today)
     .gte('return_date', today)
@@ -39,6 +48,18 @@ async function fetchActiveReturnDates(today = todayISODate()) {
 
   const byVehicle = new Map()
   for (const trip of data ?? []) {
+    const occupying = isTripOccupyingVehicle(
+      {
+        state: trip.state,
+        pickupDate: trip.pickup_date,
+        returnDate: trip.return_date,
+        pickupTime: normalizeTripTime(trip.pickup_time),
+        returnTime: normalizeTripTime(trip.return_time),
+      },
+      now,
+    )
+    if (!occupying) continue
+
     const current = byVehicle.get(trip.vehicle_id)
     if (!current || trip.return_date > current) {
       byVehicle.set(trip.vehicle_id, trip.return_date)

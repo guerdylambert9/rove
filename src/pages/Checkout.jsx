@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom'
 import { useBooking } from '../state/useBooking.js'
 import { useAuth } from '../state/auth.jsx'
 import { vehicleImageStyle } from '../lib/vehicleImage.js'
-import { computePriceBreakdown } from '../lib/tripPricing.js'
+import { computePriceBreakdown, tripChargeAmount } from '../lib/tripPricing.js'
 import { createTrip } from '../api/trips.js'
-import { formatTripSchedule } from '../lib/tripTimes.js'
+import { startCheckoutSession } from '../api/payments.js'
+import { formatTripSchedule, isPickupTimeValid } from '../lib/tripTimes.js'
+import { isPaymentsEnabled } from '../lib/stripe.js'
 import {
   bypassInsuranceGate,
   bypassPaymentGate,
@@ -15,10 +17,14 @@ import DevBookingBanner from '../components/DevBookingBanner.jsx'
 
 export default function Checkout() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { trip, setPersistedTripId, setCoverage } = useBooking()
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+
+  const cancelled = searchParams.get('cancelled') === '1'
+  const paymentsOn = isPaymentsEnabled()
 
   if (!trip.car) return <Navigate to="/" replace />
 
@@ -27,6 +33,7 @@ export default function Checkout() {
   const pricingTrip = { ...trip, coverage }
   const breakdown = computePriceBreakdown(car, pricingTrip)
   const { subtotal, serviceFee, protection, deposit, total } = breakdown
+  const chargeToday = paymentsOn ? tripChargeAmount(breakdown) : total
 
   const coverageLabel =
     coverage.type === 'protection'
@@ -50,6 +57,18 @@ export default function Checkout() {
       return
     }
 
+    if (!isPickupTimeValid(trip.pickupDate, trip.pickupTime)) {
+      setError('Pickup time must be in the future. Go back and choose a later time.')
+      return
+    }
+
+    if (!car.ownerId) {
+      setError(
+        `${car.name} isn't linked to an owner yet. Book a listing from Fleet, or assign an owner in Supabase.`,
+      )
+      return
+    }
+
     if (bypassInsuranceGate && !trip.coverage.type) {
       setCoverage(coverage)
     }
@@ -67,8 +86,17 @@ export default function Checkout() {
         days: trip.days,
         coverage,
         priceBreakdown: breakdown,
+        awaitPayment: paymentsOn,
       })
+
       setPersistedTripId(persisted.id)
+
+      if (paymentsOn) {
+        const { url } = await startCheckoutSession(persisted.id)
+        window.location.href = url
+        return
+      }
+
       navigate('/confirmed')
     } catch (err) {
       setError(err.message || 'Could not complete booking')
@@ -83,6 +111,10 @@ export default function Checkout() {
         <div className="pad" style={{ paddingTop: 18 }}>
           <DevBookingBanner />
           <h1 className="h1">Review trip</h1>
+
+          {cancelled && (
+            <p className="auth-error">Payment was cancelled. You can try again.</p>
+          )}
 
           <div className="rcard">
             <div className="mini">
@@ -99,24 +131,18 @@ export default function Checkout() {
             </div>
           </div>
 
-          {!bypassPaymentGate && (
+          {paymentsOn && (
             <div className="rcard">
-              <div className="paymethod">
-                <div className="visa">VISA</div>
-                <div>
-                  <div className="nm sm-nm">•••• 6411</div>
-                  <div className="sm">Expires 08/27</div>
-                </div>
-              </div>
-              <p className="auth-note" style={{ marginTop: 10, marginBottom: 0 }}>
-                Payment is simulated for now — real charges arrive in Phase 3.
+              <p className="auth-note" style={{ margin: 0 }}>
+                You&apos;ll pay securely with Stripe. Rental + fees are charged now; a
+                refundable deposit is authorized separately (not captured unless needed).
               </p>
             </div>
           )}
 
           {bypassPaymentGate && (
             <p className="auth-note">
-              Payment step bypassed in dev — no card charged. Stripe checkout ships in Phase 3.
+              Payment step bypassed in dev — no card charged.
             </p>
           )}
 
@@ -134,15 +160,22 @@ export default function Checkout() {
             <span>Service fee</span>
             <b>${serviceFee}</b>
           </div>
-          <div className="rowline">
-            <span>Deposit (hold)</span>
-            <b>${deposit}</b>
-          </div>
+          {paymentsOn && (
+            <div className="rowline">
+              <span>Deposit (hold)</span>
+              <b>${deposit}</b>
+            </div>
+          )}
           <div className="divide" />
           <div className="totrow">
-            <span>Total today</span>
-            <span>${total}</span>
+            <span>{paymentsOn ? 'Charged today' : 'Total today'}</span>
+            <span>${chargeToday}</span>
           </div>
+          {paymentsOn && (
+            <p className="auth-note" style={{ marginTop: 8 }}>
+              Plus ${deposit} refundable deposit hold on your card.
+            </p>
+          )}
 
           {error && <p className="auth-error">{error}</p>}
         </div>
@@ -151,14 +184,18 @@ export default function Checkout() {
       <button className="cta sky" onClick={handleBook} disabled={submitting}>
         <span>
           {submitting
-            ? 'Booking…'
+            ? paymentsOn
+              ? 'Redirecting…'
+              : 'Booking…'
             : user
-              ? bypassPaymentGate
-                ? 'Confirm booking (dev)'
-                : 'Confirm booking'
+              ? paymentsOn
+                ? 'Pay with Stripe'
+                : bypassPaymentGate
+                  ? 'Confirm booking (dev)'
+                  : 'Confirm booking'
               : 'Sign in to book'}
         </span>
-        <span>${total} ›</span>
+        <span>${chargeToday} ›</span>
       </button>
     </div>
   )

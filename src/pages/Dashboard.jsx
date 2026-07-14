@@ -63,8 +63,17 @@ export default function Dashboard() {
       : 0
 
   const activeTrips = trips.filter(
-    (t) => !['completed', 'cancelled', 'deposit_released'].includes(t.state),
+    (t) =>
+      !['completed', 'cancelled', 'deposit_released', 'payment_pending', 'returned'].includes(
+        t.state,
+      ),
   )
+
+  const refreshOwnerData = () => {
+    if (!user) return
+    fetchOwnerTrips(user.id).then(setTrips)
+    fetchOwnerVehicles(user.id).then(setCars)
+  }
 
   const bookingGroups = groupTripsByMonth(trips, { year: bookingYear })
   const yearTripCount = bookingGroups.reduce((sum, g) => sum + g.trips.length, 0)
@@ -133,7 +142,12 @@ export default function Dashboard() {
             <section key={group.key} className="booking-group">
               <h2 className="booking-month">{group.label}</h2>
               {group.trips.map((trip) => (
-                <TripCard key={trip.id} trip={trip} />
+                <TripCard
+                  key={trip.id}
+                  trip={trip}
+                  role="owner"
+                  onUpdated={refreshOwnerData}
+                />
               ))}
             </section>
           ))}

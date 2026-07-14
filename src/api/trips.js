@@ -1,6 +1,8 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase.js'
 import { formatTripDate } from '../lib/tripDates.js'
-import { formatTripSchedule, normalizeTripTime } from '../lib/tripTimes.js'
+import { formatTripSchedule, normalizeTripTime, isPickupTimeValid } from '../lib/tripTimes.js'
+import { tripChargeAmount } from '../lib/tripPricing.js'
+import { isPaymentsEnabled } from '../lib/stripe.js'
 
 function mapVehicle(row) {
   if (!row) return null
@@ -15,9 +17,29 @@ function mapVehicle(row) {
   }
 }
 
+function mapPayment(row) {
+  if (!row) return null
+  return {
+    id: row.id,
+    tripId: row.trip_id,
+    amount: row.amount != null ? Number(row.amount) : null,
+    chargeAmount: row.charge_amount != null ? Number(row.charge_amount) : null,
+    depositAmount: row.deposit_amount != null ? Number(row.deposit_amount) : null,
+    paymentStatus: row.payment_status,
+    depositHoldStatus: row.deposit_hold_status,
+    providerReference: row.provider_reference,
+    stripeCheckoutSessionId: row.stripe_checkout_session_id,
+    stripePaymentIntentId: row.stripe_payment_intent_id,
+    stripeDepositIntentId: row.stripe_deposit_intent_id,
+    payoutStatus: row.payout_status,
+  }
+}
+
 function mapTrip(row) {
   const breakdown = row.price_breakdown ?? {}
   const vehicle = mapVehicle(row.vehicle)
+  const paymentRow = Array.isArray(row.payment) ? row.payment[0] : row.payment
+  const payment = mapPayment(paymentRow)
 
   return {
     id: row.id,
@@ -41,6 +63,7 @@ function mapTrip(row) {
     priceBreakdown: breakdown,
     total: breakdown.total ?? null,
     vehicle,
+    payment,
     createdAt: row.created_at,
   }
 }
@@ -55,8 +78,27 @@ const TRIP_SELECT = `
     price_per_day,
     photos,
     gradient
-  )
+  ),
+  payment:payments (*)
 `
+
+async function resolveOwnerId(vehicleId, ownerId) {
+  if (ownerId) return ownerId
+
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('owner_id, name')
+    .eq('id', vehicleId)
+    .single()
+
+  if (error) throw error
+  if (data?.owner_id) return data.owner_id
+
+  const label = data?.name ?? 'This vehicle'
+  throw new Error(
+    `${label} isn't linked to an owner yet. Book a listing from Fleet, or assign an owner in Supabase.`,
+  )
+}
 
 export async function createTrip({
   vehicleId,
@@ -69,16 +111,23 @@ export async function createTrip({
   days,
   coverage,
   priceBreakdown,
+  awaitPayment = isPaymentsEnabled(),
 }) {
   if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
   if (!renterId) throw new Error('You must be signed in to book')
-  if (ownerId === renterId) throw new Error('You cannot book your own vehicle')
+
+  const resolvedOwnerId = await resolveOwnerId(vehicleId, ownerId)
+  if (resolvedOwnerId === renterId) throw new Error('You cannot book your own vehicle')
+
+  if (!isPickupTimeValid(pickupDate, pickupTime)) {
+    throw new Error('Pickup time must be in the future')
+  }
 
   const { data: conflicts, error: conflictError } = await supabase
     .from('trips')
     .select('id')
     .eq('vehicle_id', vehicleId)
-    .not('state', 'in', '("cancelled","completed","deposit_released")')
+    .not('state', 'in', '("cancelled","completed","deposit_released","returned")')
     .lte('pickup_date', returnDate)
     .gte('return_date', pickupDate)
 
@@ -87,18 +136,20 @@ export async function createTrip({
     throw new Error('This vehicle is already booked for those dates')
   }
 
+  const initialState = awaitPayment ? 'payment_pending' : 'coverage_pending'
+
   const { data: tripRow, error: tripError } = await supabase
     .from('trips')
     .insert({
       vehicle_id: vehicleId,
       renter_id: renterId,
-      owner_id: ownerId,
+      owner_id: resolvedOwnerId,
       pickup_date: pickupDate,
       return_date: returnDate,
       pickup_time: normalizeTripTime(pickupTime),
       return_time: normalizeTripTime(returnTime),
       days,
-      state: 'coverage_pending',
+      state: initialState,
       price_breakdown: priceBreakdown,
     })
     .select('*')
@@ -116,6 +167,20 @@ export async function createTrip({
   })
 
   if (coverageError) throw coverageError
+
+  if (awaitPayment) {
+    const chargeAmount = tripChargeAmount(priceBreakdown)
+    const { error: paymentError } = await supabase.from('payments').insert({
+      trip_id: tripRow.id,
+      amount: chargeAmount,
+      charge_amount: chargeAmount,
+      deposit_amount: priceBreakdown.deposit,
+      payment_status: 'pending',
+      deposit_hold_status: 'none',
+    })
+
+    if (paymentError) throw paymentError
+  }
 
   return fetchTrip(tripRow.id)
 }
@@ -157,4 +222,30 @@ export async function fetchOwnerTrips(ownerId) {
 
   if (error) throw error
   return data.map(mapTrip)
+}
+
+/** Owner confirms vehicle handoff; frees listing and unlocks deposit release. */
+export async function markTripReturned(tripId) {
+  if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
+  if (!tripId) throw new Error('Trip id required')
+
+  const { data, error } = await supabase
+    .from('trips')
+    .update({ state: 'returned' })
+    .eq('id', tripId)
+    .in('state', [
+      'coverage_pending',
+      'coverage_verified',
+      'agreement_signed',
+      'confirmed',
+      'in_progress',
+      'requested',
+    ])
+    .select('id')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) throw new Error('Trip could not be marked returned')
+
+  return fetchTrip(tripId)
 }

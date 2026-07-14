@@ -29,7 +29,7 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | **0** Legal & insurance | ⏸ | 0% | Parallel track; gates launch, not development |
 | **1** Backend + auth | ✅ | **100%** | Supabase, auth, Browse/Detail from DB |
 | **2** Persisted booking | ✅ | **100%** | Trips + coverages saved; renter & owner views |
-| **3** Payments + deposits | ⬜ | 0% | — |
+| **3** Payments + deposits | 🔄 | **90%** | Stripe live; return handoff + Mark returned |
 | **4** Coverage + e-sign | ⬜ | 10% | Insurance screen mock; no backend gate |
 | **5** Identity screening | ⬜ | 5% | `identity_verified` on profiles only |
 | **6** Messaging + notifications | ⬜ | 5% | Inbox placeholder only |
@@ -77,7 +77,7 @@ Phase 1  Backend foundations + auth        ✅ 100%  ← DONE
    │
 Phase 2  Real booking flow (persisted)     ✅ 100%  ← DONE
    │
-Phase 3  Payments + deposits             ⬜   0%  ← NEXT
+Phase 3  Payments + deposits             🔄  90%  ← IN PROGRESS
    │
 Phase 4  Coverage verification + e-sign  ⬜  10%   ← the trust core
    │
@@ -154,16 +154,24 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 - [x] Migration `005_phase2_trips.sql` (coverage insert + vehicle read for trip parties)
 
 **Still simulated (later phases):**
-- Payment on checkout (Phase 3)
 - Real coverage proof storage & admin verify (Phase 4)
 
 ### Phase 3 — Payments + deposits
-**Status:** ⬜ Not started · **0%**
+**Status:** 🔄 In progress · **90%**
 
 **Goal:** take money safely, hold a deposit, prepare owner payouts.
 **Build:** Stripe checkout for the trip total; a **hold** (authorization) for the refundable deposit; release logic after return. No raw card data touches your servers.
 **Done when:** a test payment authorizes, the deposit holds, and both are visible on the trip.
 **Depends on:** Phase 2 (a trip to attach payment to).
+
+**Shipped:**
+- [x] Supabase Edge Functions: `create-checkout-session`, `stripe-webhook`, `release-deposit`
+- [x] Migration `010_phase3_payments.sql` — `payment_pending` state, payment columns
+- [x] Checkout → Stripe redirect when `VITE_STRIPE_PUBLISHABLE_KEY` set and bypass off
+- [x] Deposit authorization after successful checkout (webhook)
+- [x] Trip cards show payment + deposit hold status
+- [x] Return urgency + late labels; owner **Mark returned** (frees fleet; releases deposit when held)
+- [ ] Owner payouts via Connect (Phase 7)
 
 ### Phase 4 — Coverage verification + e-signed agreement *(the trust core)*
 **Status:** ⬜ Not started · **10%**

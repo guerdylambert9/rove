@@ -3,6 +3,7 @@ import { defaultBookingDates, datesFromRange } from '../lib/tripDates.js'
 import {
   DEFAULT_PICKUP_TIME,
   DEFAULT_RETURN_TIME,
+  clampPickupTime,
   isReturnTimeValid,
   nextReturnTimeAfter,
 } from '../lib/tripTimes.js'
@@ -38,6 +39,7 @@ export function BookingProvider({ children }) {
   const setDates = (pickupDate, returnDate) =>
     setTrip((t) => {
       const next = { ...t, ...datesFromRange(pickupDate, returnDate) }
+      next.pickupTime = clampPickupTime(pickupDate, next.pickupTime)
       if (
         !isReturnTimeValid(
           pickupDate,
@@ -53,13 +55,14 @@ export function BookingProvider({ children }) {
 
   const setTimes = (pickupTime, returnTime) =>
     setTrip((t) => {
+      const pickup = clampPickupTime(t.pickupDate, pickupTime)
       let nextReturn = returnTime
       if (
-        !isReturnTimeValid(t.pickupDate, t.returnDate, pickupTime, returnTime)
+        !isReturnTimeValid(t.pickupDate, t.returnDate, pickup, returnTime)
       ) {
-        nextReturn = nextReturnTimeAfter(pickupTime)
+        nextReturn = nextReturnTimeAfter(pickup)
       }
-      return { ...t, pickupTime, returnTime: nextReturn }
+      return { ...t, pickupTime: pickup, returnTime: nextReturn }
     })
 
   const setPersistedTripId = (id) => setTrip((t) => ({ ...t, persistedTripId: id }))
