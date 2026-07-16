@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
+import { fetchVehicleBlocks, rangeOverlapsBlocks } from '../api/availability.js'
 import { useBooking } from '../state/useBooking.js'
 import { todayISODate, toISODate } from '../lib/tripDates.js'
 import { formatTripSchedule, pickupTimeOptionsForDate } from '../lib/tripTimes.js'
@@ -17,6 +18,7 @@ export default function CarDetail() {
   const navigate = useNavigate()
   const { trip, selectCar, setDates, setTimes, setCoverage } = useBooking()
   const [car, setCar] = useState(null)
+  const [blocks, setBlocks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [lightboxIndex, setLightboxIndex] = useState(null)
@@ -27,8 +29,17 @@ export default function CarDetail() {
     setError(null)
 
     fetchVehicle(id)
-      .then((data) => {
-        if (!cancelled) setCar(data)
+      .then(async (data) => {
+        if (cancelled) return
+        setCar(data)
+        if (data) {
+          try {
+            const b = await fetchVehicleBlocks(data.id)
+            if (!cancelled) setBlocks(b)
+          } catch {
+            if (!cancelled) setBlocks([])
+          }
+        }
       })
       .catch((err) => {
         if (!cancelled) {
@@ -89,6 +100,11 @@ export default function CarDetail() {
   const pickupOptions = pickupTimeOptionsForDate(trip.pickupDate)
   const noPickupTimesToday = pickupOptions.length === 0
   const unownedListing = !car.ownerId
+  const datesBlocked = rangeOverlapsBlocks(
+    trip.pickupDate,
+    trip.returnDate,
+    blocks,
+  )
   const scheduleLabel = formatTripSchedule(trip)
 
   const handlePickupChange = (pickupDate) => {
@@ -116,7 +132,7 @@ export default function CarDetail() {
   }
 
   const continueBooking = () => {
-    if (noPickupTimesToday || unownedListing) return
+    if (noPickupTimesToday || unownedListing || datesBlocked) return
     selectCar(car)
     if (bypassInsuranceGate) {
       setCoverage(DEV_COVERAGE_STUB)
@@ -238,11 +254,16 @@ export default function CarDetail() {
               vehicle or assign an owner in Supabase.
             </p>
           )}
+          {datesBlocked && (
+            <p className="auth-error">
+              The owner blocked these dates — pick another range.
+            </p>
+          )}
 
           <button
             className="addins"
             onClick={continueBooking}
-            disabled={noPickupTimesToday || unownedListing}
+            disabled={noPickupTimesToday || unownedListing || datesBlocked}
           >
             <span className="lft">
               <span className="sh">
@@ -277,7 +298,7 @@ export default function CarDetail() {
       <button
         className="cta sky"
         onClick={continueBooking}
-        disabled={noPickupTimesToday || unownedListing}
+        disabled={noPickupTimesToday || unownedListing || datesBlocked}
       >
         <span>Continue</span>
         <span>${subtotal + serviceFee} total ›</span>

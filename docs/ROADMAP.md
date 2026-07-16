@@ -34,7 +34,7 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | **5** Identity screening | ⬜ | 5% | `identity_verified` on profiles only |
 | **6** Messaging + notifications | ⬜ | 5% | Inbox placeholder only |
 | **7** Dashboard + payouts | 🔄 | 15% | Real fleet list; KPIs still placeholder |
-| **8** Polish + launch | 🔄 | 25% | Fleet add/edit, photos, Vercel CLI deploy |
+| **8** Polish + launch | 🔄 | **70%** | Calendar, browse filters/map, reviews, GH Actions |
 
 **Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 ✅ · Phase 3 is next in code.
 
@@ -213,7 +213,7 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 **Progress so far:** Dashboard shows owner's real fleet from DB; KPIs (earnings, utilization, trips) are placeholders. No Stripe payouts.
 
 ### Phase 8 — Reviews, availability calendar, polish, launch
-**Status:** 🔄 In progress · **25%**
+**Status:** 🔄 In progress · **70%**
 
 **Goal:** make it feel finished and ready to widen.
 **Build:** availability calendar and listing management (§13), reviews/ratings feeding trust badges, search/filter and map on Browse, performance and accessibility pass, deploy pipeline from GitHub.
@@ -221,11 +221,13 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 
 **Progress so far:**
 - [x] Owner listing management (add/edit fleet, photos)
-- [x] Deployed to Vercel via CLI (not GitHub)
-- [ ] Availability calendar
-- [ ] Reviews/ratings
-- [ ] Search/filter and map on Browse
-- [ ] GitHub deploy pipeline
+- [x] Deployed to Vercel via CLI
+- [x] Availability calendar (owner blocks on Edit vehicle) + migration `014`
+- [x] Browse search, date/price filters, list/map toggle
+- [x] Reviews after return (trip cards) → rating badge on Browse
+- [x] GitHub Actions workflow `.github/workflows/deploy-staging.yml`
+- [ ] Full map markers per vehicle (currently OSM embed + nearby list)
+- [ ] Wire Vercel + Supabase secrets into GitHub Actions
 
 ---
 

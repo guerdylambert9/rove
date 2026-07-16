@@ -178,6 +178,19 @@ export async function createTrip({
     }
   }
 
+  // Owner blocked dates
+  const { data: blocks, error: blockError } = await supabase
+    .from('availability_blocks')
+    .select('id')
+    .eq('vehicle_id', vehicleId)
+    .lte('start_date', returnDate)
+    .gte('end_date', pickupDate)
+
+  if (blockError) throw blockError
+  if (blocks?.length > 0) {
+    throw new Error('This vehicle is blocked by the owner for those dates')
+  }
+
   const initialState = awaitPayment ? 'payment_pending' : 'coverage_pending'
 
   const { data: tripRow, error: tripError } = await supabase
