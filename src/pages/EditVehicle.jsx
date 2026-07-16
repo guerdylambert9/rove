@@ -4,6 +4,7 @@ import AppBottomNav from '../components/AppBottomNav.jsx'
 import { fetchOwnerVehicle, updateVehicle } from '../api/vehicles.js'
 import VehiclePhotoInput from '../components/VehiclePhotoInput.jsx'
 import ComboField from '../components/ComboField.jsx'
+import AvailabilityCalendar from '../components/AvailabilityCalendar.jsx'
 import { DRIVE_OPTIONS, BADGE_OPTIONS } from '../data/vehicleFieldOptions.js'
 import { useAuth } from '../state/auth.jsx'
 
@@ -230,6 +231,11 @@ export default function EditVehicle() {
               {submitting ? 'Saving…' : 'Save changes'}
             </button>
           </form>
+
+          <div className="avail-section">
+            <h2 className="h2">Availability</h2>
+            <AvailabilityCalendar vehicleId={id} />
+          </div>
         </div>
       </div>
 

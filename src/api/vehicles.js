@@ -3,6 +3,7 @@ import { ownerRentedLabel } from '../lib/vehicleAvailability.js'
 import { todayISODate } from '../lib/tripDates.js'
 import { isTripOccupyingVehicle } from '../lib/tripReturn.js'
 import { normalizeTripTime } from '../lib/tripTimes.js'
+import { fetchVehicleRatingSummaries } from './reviews.js'
 
 const INACTIVE_TRIP_STATES = [
   'cancelled',
@@ -21,6 +22,7 @@ function mapVehicle(row) {
     ownerId: row.owner_id,
     pricePerDay: Number(row.price_per_day),
     rating: row.rating != null ? Number(row.rating) : null,
+    reviewCount: row.review_count != null ? Number(row.review_count) : 0,
     trips: row.trips_count,
     distanceMi: row.distance_mi != null ? Number(row.distance_mi) : null,
     seats: row.seats,
@@ -32,6 +34,8 @@ function mapVehicle(row) {
     statusLabel: row.status_label,
     photos: row.photos ?? [],
     available: row.available,
+    lat: row.lat != null ? Number(row.lat) : null,
+    lng: row.lng != null ? Number(row.lng) : null,
   }
 }
 
@@ -92,6 +96,28 @@ async function enrichWithActiveTripStatus(vehicles) {
   return vehicles.map((v) => applyActiveTripStatus(v, activeReturns))
 }
 
+async function enrichWithReviewRatings(vehicles) {
+  if (!vehicles.length) return vehicles
+  try {
+    const summaries = await fetchVehicleRatingSummaries(vehicles.map((v) => v.id))
+    return vehicles.map((v) => {
+      const s = summaries[v.id]
+      if (!s) return v
+      return {
+        ...v,
+        rating: s.rating,
+        reviewCount: s.reviewCount,
+        badge:
+          v.badge?.includes('★') || !s.rating
+            ? v.badge
+            : `★ ${s.rating}${v.badge ? ` · ${v.badge}` : ''}`,
+      }
+    })
+  } catch {
+    return vehicles
+  }
+}
+
 function mapVehicleToRow(vehicle) {
   return {
     id: vehicle.id,
@@ -150,7 +176,8 @@ export async function fetchVehicles() {
 
   if (error) throw error
   const vehicles = await enrichWithActiveTripStatus(data.map(mapVehicle))
-  return vehicles.sort((a, b) => {
+  const withRatings = await enrichWithReviewRatings(vehicles)
+  return withRatings.sort((a, b) => {
     if (a.status !== b.status) return a.status === 'idle' ? -1 : 1
     return a.name.localeCompare(b.name)
   })
@@ -171,7 +198,9 @@ export async function fetchVehicle(id) {
   if (error) throw error
   if (!data) return null
 
-  const [vehicle] = await enrichWithActiveTripStatus([mapVehicle(data)])
+  const [vehicle] = await enrichWithReviewRatings(
+    await enrichWithActiveTripStatus([mapVehicle(data)]),
+  )
   return vehicle
 }
 
