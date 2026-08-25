@@ -45,7 +45,7 @@ A single person can hold both Renter and Owner roles on the same account.
 ## 4. Glossary
 
 - **Trip** — one booking of one vehicle for a date range.
-- **Coverage** — the insurance arrangement for a trip: either the renter's own policy (with uploaded proof) or Rové trip protection.
+- **Coverage** — the insurance arrangement for a trip: either the renter's own policy (with uploaded proof) or Bonzah trip protection (soft-embed; BORD is proof).
 - **Hold / deposit** — a refundable authorization placed on the renter's card, released after return if there's no damage.
 - **Handoff** — the in-person exchange of keys/vehicle at pickup and return.
 
@@ -76,23 +76,27 @@ A single person can hold both Renter and Owner roles on the same account.
 
 ---
 
-## 7. Feature: Coverage / Insurance `/insurance` — ✅ (gating logic built; storage ⬜)
+## 7. Feature: Coverage / Insurance `/insurance` — 🟡 (gating UI built; Bonzah + storage ⬜)
 
-**This is the most important feature in the product. Treat its rules as hard requirements.**
+**This is the most important feature in the product. Treat its rules as hard requirements.**  
+**Implementation design:** [PHASE4_BONZAH.md](./PHASE4_BONZAH.md).
 
 **How it works.** The renter must confirm coverage before they can pay. Two paths:
 
 1. **Use my own auto insurance.** The renter must **upload proof** (photo or PDF of their insurance card/declarations). Rové marks it for verification. The renter must also tick an **acknowledgment** stating their coverage extends to renting this vehicle and that they accept liability for any gap, and that **Rové is not the insurer**.
-2. **Add Rové trip protection.** A per-day third-party coverage add-on. No personal policy required, but the acknowledgment is still required.
+2. **Add Bonzah trip protection** (soft-embed). Renter selects Bonzah products (CDW / RCLI / SLI / PAI) with required POS disclosures. Premium comes from Bonzah `premiumCalc` / quote — not a hardcoded daily stub. After Stripe payment, Rové finalizes and settles via Bonzah API; **BORD `policy_no` + PDFs** are stored as proof of coverage. Acknowledgment still required; Rové is not the insurer — Bonzah/Pablow is the broker of record.
 
 **Rules & acceptance criteria.**
-- The "Confirm coverage" button is **disabled** until: the acknowledgment is checked **and** (own-policy path has a proof upload **or** protection is selected). *(Built.)*
+- The "Confirm coverage" button is **disabled** until: the acknowledgment is checked **and** (own-policy path has a proof upload **or** protection covers are selected with required insured fields). *(Partial — Bonzah fields/premium ⬜.)*
 - The acknowledgment text must name Rové as **not the insurer** and record the renter's acceptance of the liability gap.
-- Uploaded proof must be stored, timestamped, and tied to the trip and renter for the audit trail. *(Storage ⬜.)*
-- Own-policy coverage should not be treated as "verified" until an admin reviews the proof; until then the trip is "pending coverage review." *(Verification workflow ⬜.)*
+- Protection path must show Bonzah-required disclosures, excluded-vehicle link, and flyer links before purchase. *(⬜.)*
+- Uploaded proof (Path A) must be stored, timestamped, and tied to the trip and renter. *(Storage ⬜.)*
+- Own-policy coverage is not "verified" until an admin reviews the proof. *(Verification workflow ⬜.)*
+- Bonzah path is "verified" only when a BORD/`policy_no` is stored after successful settle. *(⬜.)*
+- **No pickup** until coverage verified **and** rental agreement signed (Phase 4 e-sign).
 - The system records who acknowledged what, and when, for every trip.
 
-> **Legal note carried in the product:** this flow reduces exposure by creating a paper trail and shifting responsibility in writing. It is **not** legal cover and **not** a substitute for a real commercial/rental policy. A Florida insurance broker and an attorney must review this arrangement before launch. See the roadmap, Phase 0.
+> **Legal note:** soft-embed must follow Bonzah Business Partner + Integration Partner terms and embedded-insurance compliance. Fleet/lot coverage is separate from renter trip insurance. Phase 0 still gates production launch.
 
 ---
 
