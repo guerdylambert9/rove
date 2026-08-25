@@ -30,13 +30,13 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | **1** Backend + auth | ✅ | **100%** | Supabase, auth, Browse/Detail from DB |
 | **2** Persisted booking | ✅ | **100%** | Trips + coverages saved; renter & owner views |
 | **3** Payments + deposits | 🔄 | **90%** | Stripe live; return handoff + Mark returned |
-| **4** Coverage + e-sign | ⬜ | 10% | Insurance screen mock; no backend gate |
+| **4** Coverage + e-sign | 🔄 | 15% | Bonzah soft-embed designed; build next |
 | **5** Identity screening | ⬜ | 5% | `identity_verified` on profiles only |
 | **6** Messaging + notifications | ⬜ | 5% | Inbox placeholder only |
 | **7** Dashboard + payouts | 🔄 | 15% | Real fleet list; KPIs still placeholder |
 | **8** Polish + launch | 🔄 | **70%** | Calendar, browse filters/map, reviews, GH Actions |
 
-**Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 ✅ · Phase 3 is next in code.
+**Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 ✅ · Phase 3 ~done · Phase 4 designed (Bonzah).
 
 ---
 
@@ -61,6 +61,7 @@ You already have the frontend. Here's a low-cost, AI-friendly way to fill in the
 | Payments | Stripe | Handles card data, deposits/holds, and payouts to owners; you stay out of PCI scope |
 | Identity/license | A verification provider (e.g. Stripe Identity or similar) | Don't build ID checks yourself |
 | E-signature | An e-sign API, or a signed-PDF flow | Legal weight + audit trail |
+| Renter trip insurance | Bonzah soft-embed ([API docs](https://github.com/insillion/bonzah/tree/main/api)) | Quote → settle → BORD; see [PHASE4_BONZAH.md](./PHASE4_BONZAH.md) |
 | File storage | The managed backend's storage | For coverage proofs and signed agreements, encrypted |
 | Hosting | A static host for the frontend (e.g. Vercel/Netlify) | Free/cheap, connects to your GitHub repo, deploys on push |
 
@@ -79,7 +80,7 @@ Phase 2  Real booking flow (persisted)     ✅ 100%  ← DONE
    │
 Phase 3  Payments + deposits             🔄  90%  ← IN PROGRESS
    │
-Phase 4  Coverage verification + e-sign  ⬜  10%   ← the trust core
+Phase 4  Coverage + Bonzah + e-sign      🔄  15%   ← the trust core
    │
 Phase 5  Identity verification             ⬜   5%
    │
@@ -173,16 +174,24 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 - [x] Return urgency + late labels; owner **Mark returned** (frees fleet; releases deposit when held)
 - [ ] Owner payouts via Connect (Phase 7)
 
-### Phase 4 — Coverage verification + e-signed agreement *(the trust core)*
-**Status:** ⬜ Not started · **10%**
+### Phase 4 — Coverage verification + Bonzah soft-embed + e-signed agreement *(the trust core)*
+**Status:** 🔄 In progress · **15%**
 
-**Goal:** make the coverage gate and the signed agreement real.
-**Build:** store the uploaded proof; an admin review step that flips coverage to "verified"; generate the rental agreement per trip from the approved template; capture an e-signature; store both immutably with timestamps. Enforce: **no pickup until coverage verified AND agreement signed.**
-**Done when:** a trip cannot reach "Confirmed/ready for pickup" without a stored proof, an admin approval, and a signed agreement.
-**Depends on:** Phase 0 (approved wording), Phase 2 (a trip).
+**Goal:** make the coverage gate and the signed agreement real — with Bonzah as the embedded trip-protection path.
+**Build:** (1) soft-embed Bonzah: premium → quote → settle → store BORD/PDFs; (2) own-policy proof in Storage + admin verify; (3) e-signed rental agreement (+ Bonzah addendum when protection purchased). Enforce: **no pickup until coverage verified AND agreement signed.** Full design: [PHASE4_BONZAH.md](./PHASE4_BONZAH.md).
+**Done when:** sandbox Path B issues a BORD on a paid trip; Path A verifies via admin; pickup blocked without both coverage + signature.
+**Depends on:** Phase 0 (partner terms + POS wording), Phase 2 (a trip), Phase 3 (paid trip / webhook hook).
 **Why this ordering:** this is where your real risk lives, so it's built as soon as there's a trip and a payment to hang it on — before you widen access to new renters.
 
-**Progress so far:** Insurance screen UI and `coverages` table in schema; proof upload is client-only mock.
+**Progress so far:**
+- [x] Insurance screen UI + `coverages` table; proof upload still client-only mock
+- [x] Bonzah API docs reviewed; sandbox `POST /api/v1/auth` verified
+- [x] Phase 4 design doc (`docs/PHASE4_BONZAH.md`)
+- [ ] Edge Functions: premium / quote / settle / PDF proxy
+- [ ] Live premium UI + disclosures (replace $24/day stub)
+- [ ] Webhook settles Bonzah after Stripe paid
+- [ ] Own-policy Storage + admin verify
+- [ ] Pickup gate + e-sign
 
 ### Phase 5 — Identity verification / renter screening
 **Status:** ⬜ Not started · **5%**
