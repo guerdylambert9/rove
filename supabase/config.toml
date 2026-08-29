@@ -4,5 +4,14 @@ verify_jwt = true
 [functions.release-deposit]
 verify_jwt = true
 
+[functions.bonzah-premium]
+verify_jwt = true
+
+[functions.bonzah-settle]
+verify_jwt = true
+
+[functions.bonzah-policy-pdf]
+verify_jwt = true
+
 [functions.stripe-webhook]
 verify_jwt = false

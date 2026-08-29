@@ -15,11 +15,14 @@ export const bypassPaymentGate =
   import.meta.env.VITE_DEV_BOOKING_BYPASS === 'true' ||
   import.meta.env.VITE_BYPASS_PAYMENT === 'true'
 
-/** Recorded on the trip when insurance gate is bypassed — swap for real flow in Phase 4 */
+/** Recorded on the trip when insurance gate is bypassed — not a real Bonzah quote */
 export const DEV_COVERAGE_STUB = {
   type: 'protection',
   acknowledged: true,
   proofUploaded: false,
+  covers: { cdw: true, rcli: true, sli: false, pai: false },
+  pickupState: 'Florida',
+  premiumTotal: null,
 }
 
 export function coverageForBooking(coverage) {

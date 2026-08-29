@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useBooking } from '../state/useBooking.js'
 import { useAuth } from '../state/auth.jsx'
 import { canUseOwnerView } from '../lib/roles.js'
 import { formatTripSchedule } from '../lib/tripTimes.js'
 import { fetchTrip } from '../api/trips.js'
 import { paymentSummary } from '../lib/paymentStatus.js'
+import {
+  isAgreementSigned,
+  isCoverageVerified,
+} from '../lib/tripReady.js'
 import Icon from '../components/Icon.jsx'
 
 export default function Confirmed() {
@@ -35,6 +39,24 @@ export default function Confirmed() {
     : formatTripSchedule(trip)
   const payLine = paymentSummary(loadedTrip?.payment)
 
+  const coverageDone = loadedTrip ? isCoverageVerified(loadedTrip) : false
+  const agreementDone = loadedTrip ? isAgreementSigned(loadedTrip) : false
+  const bonzahNo = loadedTrip?.coverage?.bonzahPolicyNo
+  const ownPolicy = loadedTrip?.coverage?.type === 'own'
+
+  let nextStep =
+    'Coverage verification is next — pickup details follow once that clears.'
+  if (coverageDone && !agreementDone) {
+    nextStep = 'Coverage is set. Sign the rental agreement before pickup.'
+  } else if (coverageDone && agreementDone) {
+    nextStep = 'You are ready for pickup once your host confirms handoff.'
+  } else if (ownPolicy && loadedTrip?.state === 'coverage_pending') {
+    nextStep =
+      'We received your insurance proof. An admin will verify it, then you can sign the agreement.'
+  } else if (bonzahNo) {
+    nextStep = `Bonzah policy ${bonzahNo} is on file. Sign the rental agreement when ready.`
+  }
+
   const viewTrip = () => {
     reset()
     if (user && canUseOwnerView(profile)) {
@@ -52,11 +74,8 @@ export default function Confirmed() {
         </div>
         <h1>You&apos;re booked</h1>
         <p>
-          {payLine
-            ? `${payLine}. `
-            : ''}
-          {host} will see your request. Coverage verification is next — pickup
-          details follow once that clears.
+          {payLine ? `${payLine}. ` : ''}
+          {host} will see your request. {nextStep}
         </p>
       </div>
 
@@ -76,9 +95,20 @@ export default function Confirmed() {
           </div>
           <div>
             <div className="tt">Rental agreement</div>
-            <div className="dd">Sign digitally before keys (coming in Phase 4)</div>
+            <div className="dd">
+              {agreementDone
+                ? 'Signed — ready for pickup handoff'
+                : coverageDone
+                  ? 'Sign from your trip list before keys'
+                  : 'Available after coverage is verified'}
+            </div>
           </div>
         </div>
+        {loadedTrip && coverageDone && !agreementDone && (
+          <Link to={`/trip/${loadedTrip.id}/sign`} className="cta outline conf-sign-link">
+            Sign agreement now
+          </Link>
+        )}
         <div className="li">
           <div className="ic2">
             <Icon name="chat" size={16} />

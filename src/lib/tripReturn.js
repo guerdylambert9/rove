@@ -8,15 +8,6 @@ const ENDED_STATES = new Set([
   'cancelled',
 ])
 
-const OPEN_FOR_RETURN_STATES = new Set([
-  'coverage_pending',
-  'coverage_verified',
-  'agreement_signed',
-  'confirmed',
-  'in_progress',
-  'requested',
-])
-
 /** Local Date for the trip's scheduled return. */
 export function tripReturnAt(trip) {
   const date = trip.returnDate ?? trip.return_date
@@ -89,6 +80,11 @@ export function getReturnTiming(trip, now = new Date()) {
   return { status: 'ok', message: null }
 }
 
-export function canOwnerMarkReturned(trip) {
-  return OPEN_FOR_RETURN_STATES.has(trip.state)
-}
+export {
+  canOwnerMarkReturned,
+  canOwnerConfirmPickup,
+  canProceedToPickup,
+  pickupGateMessage,
+  isCoverageVerified,
+  isAgreementSigned,
+} from './tripReady.js'

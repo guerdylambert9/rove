@@ -1,6 +1,6 @@
 # Rové — Development Roadmap & Build Order
 
-**Version:** 0.2 · **Companion to:** REQUIREMENTS.md · **Last updated:** July 2026
+**Version:** 0.3 · **Companion to:** REQUIREMENTS.md · **Last updated:** August 2026
 **Goal it serves:** get to a version that can safely take one real, paid booking from a real customer — then a handful — without over-building.
 
 ---
@@ -9,7 +9,7 @@
 
 This document answers three questions: **what to build first, what comes next, and why in that order.** The ordering is driven by dependencies and by risk — the riskiest, most expensive-to-get-wrong things (insurance, legal, payments) are validated early even when they aren't code, because building screens on top of an unverified insurance model is how you waste months.
 
-The current state: **Phase 1 is complete. Phase 2 is complete in code** — bookings persist as trips; renters see them on Trips, owners on Dashboard. Run `005_phase2_trips.sql` in Supabase. Payment is still simulated (Phase 3); coverage verification is pending (Phase 4).
+The current state: **Phases 1–2 are complete. Phase 3 (Stripe + deposits) is effectively done in sandbox.** **Phase 4 is complete in sandbox** — Bonzah path B (BORD + PDFs), own-policy proof upload + admin verify, e-signed rental agreement, and pickup gate (confirm pickup / mark returned). **Production launch still gated by Phase 0** (legal + Bonzah partner sign-off) and production Stripe/Bonzah credentials.
 
 ### Progress legend
 
@@ -29,14 +29,14 @@ Percentages are **rough** — based on “done when” criteria plus visible cod
 | **0** Legal & insurance | ⏸ | 0% | Parallel track; gates launch, not development |
 | **1** Backend + auth | ✅ | **100%** | Supabase, auth, Browse/Detail from DB |
 | **2** Persisted booking | ✅ | **100%** | Trips + coverages saved; renter & owner views |
-| **3** Payments + deposits | 🔄 | **90%** | Stripe live; return handoff + Mark returned |
-| **4** Coverage + e-sign | 🔄 | 15% | Bonzah soft-embed designed; build next |
+| **3** Payments + deposits | 🔄 | **95%** | Stripe Checkout + deposit hold live; Connect payouts deferred |
+| **4** Coverage + e-sign | ✅ | **95%** | Sandbox complete; production Bonzah partner terms (Phase 0) |
 | **5** Identity screening | ⬜ | 5% | `identity_verified` on profiles only |
-| **6** Messaging + notifications | ⬜ | 5% | Inbox placeholder only |
-| **7** Dashboard + payouts | 🔄 | 15% | Real fleet list; KPIs still placeholder |
-| **8** Polish + launch | 🔄 | **70%** | Calendar, browse filters/map, reviews, GH Actions |
+| **6** Messaging + notifications | 🟡 | 15% | Inbox + booking notifications; no trip chat |
+| **7** Dashboard + payouts | 🔄 | 20% | Real fleet + trips; KPIs + Connect payouts placeholder |
+| **8** Polish + launch | 🔄 | **75%** | Calendar, browse filters/map, reviews, GH Actions staging |
 
-**Critical path to first paid booking:** Phases 0–4. Phase 1 ✅ · Phase 2 ✅ · Phase 3 ~done · Phase 4 designed (Bonzah).
+**Critical path to first real booking:** Phases 0–4. Phases 1–4 ✅ in sandbox · **Phase 0 legal + production credentials** remain before first real customer.
 
 ---
 
@@ -78,17 +78,17 @@ Phase 1  Backend foundations + auth        ✅ 100%  ← DONE
    │
 Phase 2  Real booking flow (persisted)     ✅ 100%  ← DONE
    │
-Phase 3  Payments + deposits             🔄  90%  ← IN PROGRESS
+Phase 3  Payments + deposits             🔄  95%  ← Stripe live in test
    │
-Phase 4  Coverage + Bonzah + e-sign      🔄  15%   ← the trust core
+Phase 4  Coverage + Bonzah + e-sign      ✅  95%  ← sandbox complete
    │
 Phase 5  Identity verification             ⬜   5%
    │
-Phase 6  Messaging + notifications       ⬜   5%
+Phase 6  Messaging + notifications       🟡  15%
    │
-Phase 7  Owner dashboard + payouts         🔄  15%
+Phase 7  Owner dashboard + payouts         🔄  20%
    │
-Phase 8  Reviews, calendar, polish       🔄  25%
+Phase 8  Reviews, calendar, polish       🔄  75%
 ```
 
 Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8 make it scale and feel finished.
@@ -158,7 +158,7 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 - Real coverage proof storage & admin verify (Phase 4)
 
 ### Phase 3 — Payments + deposits
-**Status:** 🔄 In progress · **90%**
+**Status:** 🔄 In progress · **95%**
 
 **Goal:** take money safely, hold a deposit, prepare owner payouts.
 **Build:** Stripe checkout for the trip total; a **hold** (authorization) for the refundable deposit; release logic after return. No raw card data touches your servers.
@@ -172,26 +172,44 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 - [x] Deposit authorization after successful checkout (webhook)
 - [x] Trip cards show payment + deposit hold status
 - [x] Return urgency + late labels; owner **Mark returned** (frees fleet; releases deposit when held)
-- [ ] Owner payouts via Connect (Phase 7)
+- [x] Resume/cancel `payment_pending` trips from Trips
+- [x] Stripe test card flow verified (`4242…`)
+
+**Remaining:**
+- [ ] Owner payouts via Stripe Connect (Phase 7)
+- [ ] Production Stripe keys + webhook endpoint on live domain
 
 ### Phase 4 — Coverage verification + Bonzah soft-embed + e-signed agreement *(the trust core)*
-**Status:** 🔄 In progress · **15%**
+**Status:** ✅ Complete in sandbox · **95%**
 
 **Goal:** make the coverage gate and the signed agreement real — with Bonzah as the embedded trip-protection path.
 **Build:** (1) soft-embed Bonzah: premium → quote → settle → store BORD/PDFs; (2) own-policy proof in Storage + admin verify; (3) e-signed rental agreement (+ Bonzah addendum when protection purchased). Enforce: **no pickup until coverage verified AND agreement signed.** Full design: [PHASE4_BONZAH.md](./PHASE4_BONZAH.md).
-**Done when:** sandbox Path B issues a BORD on a paid trip; Path A verifies via admin; pickup blocked without both coverage + signature.
+**Done when:** sandbox Path B issues a BORD on a paid trip ✅; Path A verifies via admin ✅; pickup blocked without both coverage + signature ✅.
 **Depends on:** Phase 0 (partner terms + POS wording), Phase 2 (a trip), Phase 3 (paid trip / webhook hook).
 **Why this ordering:** this is where your real risk lives, so it's built as soon as there's a trip and a payment to hang it on — before you widen access to new renters.
 
-**Progress so far:**
-- [x] Insurance screen UI + `coverages` table; proof upload still client-only mock
-- [x] Bonzah API docs reviewed; sandbox `POST /api/v1/auth` verified
-- [x] Phase 4 design doc (`docs/PHASE4_BONZAH.md`)
-- [ ] Edge Functions: premium / quote / settle / PDF proxy
-- [ ] Live premium UI + disclosures (replace $24/day stub)
-- [ ] Webhook settles Bonzah after Stripe paid
-- [ ] Own-policy Storage + admin verify
-- [ ] Pickup gate + e-sign
+**Shipped:**
+- [x] Insurance screen UI + `coverages` table
+- [x] Bonzah API integration design + sandbox auth verified
+- [x] Edge Functions: `bonzah-premium`, `bonzah-settle`, `bonzah-policy-pdf`; shared `_shared/bonzah.ts`, `_shared/bonzahIssue.ts`
+- [x] Migrations `015`–`017` (Bonzah columns, insured snapshot, Storage + admin verify + e-sign)
+- [x] Bonzah product picker + live premium + required disclosures
+- [x] Insured details form (required before checkout on protection path)
+- [x] 24-hour rental day billing (aligned with Bonzah cycles)
+- [x] Stripe webhook: finalize quote + settle after payment → store BORD
+- [x] Trip → `coverage_verified` + BORD on card when settle succeeds
+- [x] Manual retry: **Issue Bonzah policy** on trip card
+- [x] **Sandbox end-to-end verified** (test card → insured details → BORD e.g. `BORD2026083001000001`)
+- [x] Bonzah PDF download via `bonzah-policy-pdf` proxy on trip card
+- [x] Own-policy proof → Supabase Storage (`coverage-proofs` bucket)
+- [x] Admin coverage queue at `/admin/coverage` (approve / reject)
+- [x] E-signed rental agreement at `/trip/:id/sign` (signature stored in `agreements` bucket)
+- [x] Pickup gate: owner **Confirm pickup** → `in_progress`; **Mark returned** only after pickup
+- [x] Confirmed page copy reflects coverage / agreement state
+
+**Remaining (production launch, not sandbox code):**
+- [ ] Production Bonzah host + partner CD balance / settle terms (with Bonzah)
+- [ ] Phase 0: Business Partner + Integration Partner terms, attorney-reviewed agreement template
 
 ### Phase 5 — Identity verification / renter screening
 **Status:** ⬜ Not started · **5%**
@@ -204,39 +222,57 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 **Progress so far:** `identity_verified` column on profiles; no verification flow.
 
 ### Phase 6 — Messaging + notifications
-**Status:** ⬜ Not started · **5%**
+**Status:** 🟡 Partial · **15%**
 
 **Goal:** coordinate handoff without leaving the app.
 **Build:** trip-scoped messaging; notifications on booking, coverage decision, agreement ready, pickup/return reminders, deposit release.
 **Done when:** the two parties can communicate and get the key reminders automatically.
 
-**Progress so far:** `/inbox` placeholder page only.
+**Shipped:**
+- [x] `/inbox` with notifications list (read/unread)
+- [x] DB triggers: booking created, payment received
+
+**Remaining:**
+- [ ] Trip-scoped messaging between renter and owner
+- [ ] Coverage verified / agreement ready / pickup / return reminders
 
 ### Phase 7 — Owner dashboard (real data) + payouts
-**Status:** 🔄 In progress · **15%**
+**Status:** 🔄 In progress · **20%**
 
 **Goal:** turn the static dashboard into the owner's real control panel.
 **Build:** compute earnings, utilization, and trip counts from real bookings; show live fleet status; schedule owner payouts via Stripe.
 **Done when:** the numbers on `/dashboard` are real and payouts run.
 
-**Progress so far:** Dashboard shows owner's real fleet from DB; KPIs (earnings, utilization, trips) are placeholders. No Stripe payouts.
+**Shipped:**
+- [x] Dashboard shows owner's real fleet from DB (rented/idle sync)
+- [x] Owner trips list on Dashboard
+- [x] Mark returned + deposit release from trip cards
+
+**Remaining:**
+- [ ] KPIs from real bookings (earnings, utilization, trip count, ADR)
+- [ ] Stripe Connect owner payouts
 
 ### Phase 8 — Reviews, availability calendar, polish, launch
-**Status:** 🔄 In progress · **70%**
+**Status:** 🔄 In progress · **75%**
 
 **Goal:** make it feel finished and ready to widen.
 **Build:** availability calendar and listing management (§13), reviews/ratings feeding trust badges, search/filter and map on Browse, performance and accessibility pass, deploy pipeline from GitHub.
 **Done when:** an owner can self-manage listings and availability, and the app is deployed.
 
-**Progress so far:**
+**Shipped:**
 - [x] Owner listing management (add/edit fleet, photos)
-- [x] Deployed to Vercel via CLI
+- [x] Deployed to Vercel (CLI + staging alias)
 - [x] Availability calendar (owner blocks on Edit vehicle) + migration `014`
 - [x] Browse search, date/price filters, list/map toggle
 - [x] Reviews after return (trip cards) → rating badge on Browse
 - [x] GitHub Actions workflow `.github/workflows/deploy-staging.yml`
+- [x] Dynamic status-bar clock; 24-hour rental day billing
+
+**Remaining:**
 - [ ] Full map markers per vehicle (currently OSM embed + nearby list)
-- [ ] Wire Vercel + Supabase secrets into GitHub Actions
+- [ ] Wire all Vercel + Supabase + Stripe secrets into GitHub Actions for reliable CI deploys
+- [ ] Browse respects blocked/booked dates on all filter paths (verify edge cases)
+- [ ] Performance and accessibility pass
 
 ---
 
@@ -279,8 +315,8 @@ Since you're leaning on AI for development, a few practices that keep it product
 These are directional, assuming part-time effort with AI assistance:
 
 1. **Weeks 1–3:** Phase 0 in motion (broker + attorney) and Phase 1 backend/auth. *(Phase 1 ✅)*
-2. **Weeks 4–7:** Phases 2–3 — persisted bookings and real payments. *(Phase 2 ✅; Phase 3 next)*
-3. **Weeks 8–11:** Phase 4 — coverage verification + signed agreement; take your **first real booking from a known customer.**
+2. **Weeks 4–7:** Phases 2–3 — persisted bookings and real payments. *(Phases 2–3 ✅ in sandbox)*
+3. **Weeks 8–11:** Phase 4 ✅ in sandbox; **first real booking from a known customer** after Phase 0 + production credentials.
 4. **Months 4–6:** Phases 5–7 — screening, messaging, live dashboard, payouts; widen to more of Kevin's customers.
 5. **Months 6–12:** Phase 8 and iteration — listings/calendar, reviews, deploy pipeline, and only then consider carefully widening beyond people you already trust.
 

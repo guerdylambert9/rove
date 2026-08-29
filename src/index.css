@@ -778,6 +778,166 @@ a {
   color: var(--ink);
 }
 
+.muted-pr {
+  color: var(--slate);
+  font-weight: 600;
+}
+
+.bonzah-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  padding: 12px;
+  margin: -4px 0 12px;
+}
+
+.bonzah-panel .field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--slate);
+  margin-bottom: 10px;
+}
+
+.bonzah-panel .field select {
+  font: inherit;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.bonzah-products {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cover-toggle {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--mist);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.cover-toggle.on {
+  border-color: var(--sky);
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(58, 134, 255, 0.12);
+}
+
+.cover-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cover-toggle-hd {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.cover-toggle .check {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--line);
+  flex: none;
+  margin-top: 1px;
+}
+
+.cover-toggle .check.on {
+  border-color: var(--sky);
+  background: var(--sky);
+  box-shadow: inset 0 0 0 2px #fff;
+}
+
+.cover-toggle .tagline {
+  font-size: 11px;
+  color: var(--slate);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.cover-bullets {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 11px;
+  color: var(--slate);
+  line-height: 1.4;
+}
+
+.cover-rate {
+  margin-top: 8px;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.flyer-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--sky);
+}
+
+.bonzah-premium-row {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.bonzah-disclosure {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--slate);
+  line-height: 1.45;
+}
+
+.bonzah-disclosure a {
+  color: var(--sky);
+}
+
+.insured-form {
+  margin: 12px 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.insured-form-title {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.insured-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.insured-grid .insured-full {
+  grid-column: 1 / -1;
+}
+
+.insured-grid .field input,
+.insured-grid .field select {
+  font: inherit;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* ---- Checkout ---- */
 .rcard {
   background: #fff;
@@ -1150,6 +1310,84 @@ a {
   margin-top: 6px;
   margin-bottom: 0;
   font-size: 11px;
+}
+.trip-pdf-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.trip-pdf-link {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--sky);
+  cursor: pointer;
+}
+.trip-pdf-link:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+a.trip-return-btn {
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.agreement-summary {
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+}
+.agreement-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 14px;
+}
+.agreement-terms {
+  margin: 12px 0 16px;
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.admin-coverage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+.admin-coverage-card {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+.admin-coverage-card .nm {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.admin-proof-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--sky);
+}
+.admin-back {
+  display: inline-block;
+  margin-bottom: 8px;
+  text-decoration: none;
+}
+.conf-sign-link {
+  margin: 8px 0 0 44px;
+  display: inline-block;
 }
 
 /* ---- Notifications / Inbox ---- */

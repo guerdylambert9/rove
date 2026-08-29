@@ -35,11 +35,41 @@ function mapPayment(row) {
   }
 }
 
+function mapCoverage(row) {
+  if (!row) return null
+  const covRow = Array.isArray(row) ? row[0] : row
+  if (!covRow) return null
+  return {
+    id: covRow.id,
+    type: covRow.type,
+    verificationStatus: covRow.verification_status,
+    proofFileRef: covRow.proof_file_ref,
+    bonzahPolicyNo: covRow.bonzah_policy_no,
+    bonzahPremium: covRow.bonzah_premium != null ? Number(covRow.bonzah_premium) : null,
+    bonzahPdfIds: covRow.bonzah_pdf_ids ?? {},
+    rejectionReason: covRow.rejection_reason,
+  }
+}
+
+function mapAgreement(row) {
+  if (!row) return null
+  const a = Array.isArray(row) ? row[0] : row
+  if (!a) return null
+  return {
+    signedAt: a.signed_at,
+    signerName: a.signer_name,
+    documentRef: a.document_ref,
+    templateVersion: a.template_version,
+  }
+}
+
 function mapTrip(row) {
   const breakdown = row.price_breakdown ?? {}
   const vehicle = mapVehicle(row.vehicle)
   const paymentRow = Array.isArray(row.payment) ? row.payment[0] : row.payment
   const payment = mapPayment(paymentRow)
+  const coverage = mapCoverage(row.coverage)
+  const agreement = mapAgreement(row.agreement)
 
   return {
     id: row.id,
@@ -64,6 +94,8 @@ function mapTrip(row) {
     total: breakdown.total ?? null,
     vehicle,
     payment,
+    coverage,
+    agreement,
     createdAt: row.created_at,
   }
 }
@@ -79,7 +111,9 @@ const TRIP_SELECT = `
     photos,
     gradient
   ),
-  payment:payments (*)
+  payment:payments (*),
+  coverage:coverages (*),
+  agreement:agreements (*)
 `
 
 async function resolveOwnerId(vehicleId, ownerId) {
@@ -212,14 +246,28 @@ export async function createTrip({
 
   if (tripError) throw tripError
 
-  const { error: coverageError } = await supabase.from('coverages').insert({
+  const coverageInsert = {
     trip_id: tripRow.id,
     type: coverage.type,
     verification_status: 'pending',
     acknowledgment_text: 'Rové is not the insurer.',
     acknowledged_at: coverage.acknowledged ? new Date().toISOString() : null,
-    proof_file_ref: coverage.proofUploaded ? 'pending_upload' : null,
-  })
+    proof_file_ref:
+      coverage.proofFileRef ??
+      (coverage.proofUploaded ? 'pending_upload' : null),
+  }
+
+  if (coverage.type === 'protection') {
+    coverageInsert.bonzah_covers = coverage.covers ?? {}
+    coverageInsert.bonzah_premium =
+      coverage.premiumTotal != null ? Number(coverage.premiumTotal) : null
+    coverageInsert.pickup_state = coverage.pickupState ?? null
+    coverageInsert.insured_snapshot = coverage.insured ?? null
+  }
+
+  const { error: coverageError } = await supabase
+    .from('coverages')
+    .insert(coverageInsert)
 
   if (coverageError) throw coverageError
 
@@ -279,7 +327,30 @@ export async function fetchOwnerTrips(ownerId) {
   return data.map(mapTrip)
 }
 
-/** Owner confirms vehicle handoff; frees listing and unlocks deposit release. */
+/** Owner confirms keys handed over — requires coverage + agreement. */
+export async function markTripPickedUp(tripId) {
+  if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
+  if (!tripId) throw new Error('Trip id required')
+
+  const { data, error } = await supabase
+    .from('trips')
+    .update({ state: 'in_progress' })
+    .eq('id', tripId)
+    .in('state', ['coverage_verified', 'agreement_signed', 'confirmed'])
+    .select('id')
+    .maybeSingle()
+
+  if (error) throw error
+  if (!data) {
+    throw new Error(
+      'Pickup could not be confirmed. Coverage must be verified and the agreement signed.',
+    )
+  }
+
+  return fetchTrip(tripId)
+}
+
+/** Owner confirms vehicle returned — only after in-progress trip. */
 export async function markTripReturned(tripId) {
   if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
   if (!tripId) throw new Error('Trip id required')
@@ -288,19 +359,14 @@ export async function markTripReturned(tripId) {
     .from('trips')
     .update({ state: 'returned' })
     .eq('id', tripId)
-    .in('state', [
-      'coverage_pending',
-      'coverage_verified',
-      'agreement_signed',
-      'confirmed',
-      'in_progress',
-      'requested',
-    ])
+    .eq('state', 'in_progress')
     .select('id')
     .maybeSingle()
 
   if (error) throw error
-  if (!data) throw new Error('Trip could not be marked returned')
+  if (!data) {
+    throw new Error('Trip could not be marked returned. Confirm pickup first.')
+  }
 
   return fetchTrip(tripId)
 }
