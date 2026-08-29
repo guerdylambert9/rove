@@ -29,6 +29,7 @@ A trip cannot become ready for pickup until:
 | Coverage paths | Keep **own** + **protection** | Own path for renters with valid personal coverage; protection = Bonzah |
 | Who buys | **Renter** buys Bonzah coverage for the trip dates | Fleet/Roamly gap stays Phase 0 / broker conversation — not this phase’s code |
 | When policy must exist | **Before pickup** (hard gate). Prefer issue at/after checkout so dates match the paid trip | Partner terms: buy before pickup; BORD = proof |
+| Rental day count | **24-hour periods** from pickup time (`ceil(hours/24)`) | Matches agency-style rentals and Bonzah 24h cycles |
 | Secrets | **Supabase Edge Functions only** — never `VITE_*` | Auth email/password must not ship to the browser |
 | Card collection | Renter pays insurance premium via **Stripe** (same checkout) or a dedicated line item; Rové settles Bonzah via `POST …/payment` with cash/`payment_id` | Bonzah payment API is settle-to-issue, not a card form |
 | Disclosure | Unaltered Bonzah POS copy, flyer links, excluded-vehicle link, broker disclosure | Required by compliance PDF + API readme |
@@ -189,7 +190,7 @@ Trip state machine (unchanged labels; enforcement tightens):
 | Quote | `POST /api/v1/Bonzah/quote` | Draft at checkout; finalize after pay |
 | Payment | `POST /api/v1/Bonzah/payment` | Issue policy; returns BORD + pdf ids |
 | Policy | `GET /api/v1/Bonzah/policy` | Refresh / display |
-| PDFs | `GET /api/v1/policy/data?data_id=&download=1` | Renter/owner download COIs |
+| PDFs | `GET /api/v1/policy/data/{policy_id}?data_id=&download=1` | Renter/owner download COIs |
 | Endorsements | 07–14 | Later: date change / cancel via portal or API |
 
 **Quote payload (required fields we must collect):**  
@@ -248,18 +249,18 @@ From Bonzah API readme + Embedded Insurance Compliance docs:
 
 ## 10. Implementation slices (build order)
 
-1. **Secrets + thin client** — Edge `bonzah-premium` against sandbox; log total_premium only.  
-2. **Schema migration** — coverages Bonzah columns + profile insured fields + Storage buckets/RLS.  
-3. **Insurance UI** — Bonzah product picker + live premium + required disclosures; drop $24 stub.  
-4. **Checkout pricing** — charge live premium; persist cover flags on `coverages`.  
-5. **Webhook settle** — after Stripe paid, finalize + payment → BORD; gate trip state.  
+1. **Secrets + thin client** — Edge `bonzah-premium` against sandbox. ✅ code  
+2. **Schema migration** — coverages Bonzah columns + profile insured fields. ✅ `015` (run in Supabase)  
+3. **Insurance UI** — Bonzah product picker + live premium + disclosures. ✅  
+4. **Checkout pricing** — charge live premium; persist cover flags on `coverages`. ✅ partial (persist + price wired; settle later)  
+5. **Webhook settle** — after Stripe paid, finalize + payment → BORD; gate trip state. ✅  
 6. **Own-policy Storage + admin verify** — real upload; approve flips `coverage_verified`.  
 7. **Pickup gate** — Confirmed / Trips / owner handoff require verified + signed.  
 8. **E-sign** — agreement template + Bonzah addendum + signature capture.  
 9. **PDF proxy** — download COIs from trip card.  
 10. **Hardening** — excluded vehicle check, idempotency, error UX, staging secrets.
 
-Suggested first PR: slices 1–3 (sandbox premium on Insurance screen).
+**First PR (slices 1–3):** code complete. Edge secrets set; `bonzah-premium` deployed; `015` applied on linked project.
 
 ---
 

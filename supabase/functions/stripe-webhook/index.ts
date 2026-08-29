@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@14.21.0?target=deno'
+import { issueBonzahForTrip } from '../_shared/bonzahIssue.ts'
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
   apiVersion: '2023-10-16',
@@ -126,6 +127,13 @@ Deno.serve(async (req) => {
       .update({ state: 'coverage_pending' })
       .eq('id', tripId)
       .eq('state', 'payment_pending')
+
+    const bonzahResult = await issueBonzahForTrip(serviceClient, tripId)
+    if (!bonzahResult.ok) {
+      console.error('Bonzah issuance failed for trip', tripId, bonzahResult.error)
+    } else if (bonzahResult.policyNo) {
+      console.log('Bonzah policy issued', tripId, bonzahResult.policyNo)
+    }
   }
 
   if (event.type === 'checkout.session.expired') {

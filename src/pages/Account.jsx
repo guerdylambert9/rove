@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import AppBottomNav from '../components/AppBottomNav.jsx'
 import PasswordField from '../components/PasswordField.jsx'
 import MfaSecurity from '../components/MfaSecurity.jsx'
 import { useAuth } from '../state/auth.jsx'
 import { validatePassword } from '../lib/password.js'
+import { isAdmin } from '../lib/roles.js'
 
 export default function Account() {
   const navigate = useNavigate()
@@ -176,6 +177,16 @@ export default function Account() {
             </form>
 
             <MfaSecurity />
+
+            {isAdmin(profile) && (
+              <Link
+                to="/admin/coverage"
+                className="cta outline"
+                style={{ marginTop: 16, display: 'block', textAlign: 'center' }}
+              >
+                Coverage review queue
+              </Link>
+            )}
 
             {canUseOwnerView() && (
               <button

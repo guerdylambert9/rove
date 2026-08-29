@@ -4,6 +4,7 @@ import { fetchVehicles } from '../api/vehicles.js'
 import { fetchVehicleBlocks, rangeOverlapsBlocks } from '../api/availability.js'
 import CarCard from '../components/CarCard.jsx'
 import AppBottomNav from '../components/AppBottomNav.jsx'
+import StatusBar from '../components/StatusBar.jsx'
 import Icon from '../components/Icon.jsx'
 import { todayISODate } from '../lib/tripDates.js'
 
@@ -106,10 +107,7 @@ export default function Browse() {
 
   return (
     <div className="page">
-      <div className="statusbar">
-        <span>9:41</span>
-        <span className="signal" />
-      </div>
+      <StatusBar />
 
       <div className="scroll">
         <div className="pad">

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { vehicleImageStyle } from '../lib/vehicleImage.js'
 import AppBottomNav from '../components/AppBottomNav.jsx'
+import StatusBar from '../components/StatusBar.jsx'
 import { fetchOwnerVehicles } from '../api/vehicles.js'
 import { useAuth } from '../state/auth.jsx'
 
@@ -34,10 +35,7 @@ export default function Fleet() {
 
   return (
     <div className="page">
-      <div className="statusbar">
-        <span>9:41</span>
-        <span className="signal" />
-      </div>
+      <StatusBar />
 
       <div className="scroll">
         <div className="pad" style={{ paddingTop: 24 }}>

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Navigate } from 'react-router-dom'
 import { fetchVehicle } from '../api/vehicles.js'
 import { fetchVehicleBlocks, rangeOverlapsBlocks } from '../api/availability.js'
 import { useBooking } from '../state/useBooking.js'
-import { todayISODate, toISODate } from '../lib/tripDates.js'
+import { todayISODate, toISODate, calendarDayOffset } from '../lib/tripDates.js'
 import { formatTripSchedule, pickupTimeOptionsForDate } from '../lib/tripTimes.js'
 import { computePriceBreakdown } from '../lib/tripPricing.js'
 import { bypassInsuranceGate, DEV_COVERAGE_STUB } from '../lib/bookingFlags.js'
@@ -112,7 +112,10 @@ export default function CarDetail() {
     let returnDate = trip.returnDate
     if (returnDate < pickupDate) {
       const adjusted = new Date(`${pickupDate}T12:00:00`)
-      adjusted.setDate(adjusted.getDate() + (trip.days - 1))
+      // Keep the same calendar span (not billable-day count)
+      adjusted.setDate(
+        adjusted.getDate() + calendarDayOffset(trip.pickupDate, trip.returnDate),
+      )
       returnDate = toISODate(adjusted)
     }
     setDates(pickupDate, returnDate)
@@ -279,7 +282,8 @@ export default function CarDetail() {
 
           <div className="rowline">
             <span>
-              ${car.pricePerDay} × {trip.days} days
+              ${car.pricePerDay} × {trip.days}{' '}
+              {trip.days === 1 ? 'day' : 'days'}
             </span>
             <b>${subtotal}</b>
           </div>

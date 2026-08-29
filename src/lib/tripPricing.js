@@ -1,11 +1,20 @@
 const SERVICE_FEE = 28
 const DEPOSIT = 300
-const PROTECTION_PER_DAY = 24
+
+/** @deprecated Stub only used when protection selected without a live Bonzah quote */
+const FALLBACK_PROTECTION_PER_DAY = 24
 
 export function computePriceBreakdown(car, { days, coverage }) {
   const subtotal = car.pricePerDay * days
-  const protection =
-    coverage?.type === 'protection' ? PROTECTION_PER_DAY * days : 0
+  let protection = 0
+  if (coverage?.type === 'protection') {
+    if (coverage.premiumTotal != null && Number(coverage.premiumTotal) >= 0) {
+      protection = Number(coverage.premiumTotal)
+    } else {
+      // Dev bypass / incomplete quote — keep a non-zero placeholder
+      protection = FALLBACK_PROTECTION_PER_DAY * days
+    }
+  }
   const total = subtotal + SERVICE_FEE + protection + DEPOSIT
 
   return {
@@ -17,6 +26,8 @@ export function computePriceBreakdown(car, { days, coverage }) {
     deposit: DEPOSIT,
     total,
     coverageType: coverage?.type ?? null,
+    bonzahCovers: coverage?.covers ?? null,
+    pickupState: coverage?.pickupState ?? null,
     vehicleName: car.name,
     vehicleId: car.id,
   }

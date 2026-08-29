@@ -38,8 +38,10 @@ export default function Checkout() {
   const coverageLabel =
     coverage.type === 'protection'
       ? bypassInsuranceGate && !trip.coverage.type
-        ? 'Rové protection (dev placeholder)'
-        : 'Rové protection'
+        ? 'Bonzah protection (dev placeholder)'
+        : coverage.premiumTotal != null
+          ? `Bonzah protection (${Number(coverage.premiumTotal).toFixed(2)})`
+          : 'Bonzah protection'
       : 'Own policy (pending verification)'
 
   const scheduleLabel = formatTripSchedule(trip)
@@ -147,13 +149,21 @@ export default function Checkout() {
           )}
 
           <div className="rowline">
-            <span>{trip.days} days</span>
+            <span>
+              {trip.days} {trip.days === 1 ? 'day' : 'days'}
+            </span>
             <b>${subtotal}</b>
           </div>
           {protection > 0 && (
             <div className="rowline">
-              <span>Trip protection</span>
-              <b>${protection}</b>
+              <span>Bonzah insurance</span>
+              <b>
+                $
+                {Number(protection).toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </b>
             </div>
           )}
           <div className="rowline">

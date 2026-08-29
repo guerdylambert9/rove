@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import AppBottomNav from '../components/AppBottomNav.jsx'
+import StatusBar from '../components/StatusBar.jsx'
 import NotificationItem from '../components/NotificationItem.jsx'
 import {
   fetchNotifications,
@@ -80,10 +81,7 @@ export default function Inbox() {
 
   return (
     <div className="page">
-      <div className="statusbar">
-        <span>9:41</span>
-        <span className="signal" />
-      </div>
+      <StatusBar />
 
       <div className="scroll">
         <div className="pad" style={{ paddingTop: 24 }}>

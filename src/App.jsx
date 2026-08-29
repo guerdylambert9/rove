@@ -4,6 +4,8 @@ import CarDetail from './pages/CarDetail.jsx'
 import Insurance from './pages/Insurance.jsx'
 import Checkout from './pages/Checkout.jsx'
 import Confirmed from './pages/Confirmed.jsx'
+import SignAgreement from './pages/SignAgreement.jsx'
+import AdminCoverage from './pages/AdminCoverage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Account from './pages/Account.jsx'
 import Trips from './pages/Trips.jsx'
@@ -12,6 +14,7 @@ import Fleet from './pages/Fleet.jsx'
 import AddVehicle from './pages/AddVehicle.jsx'
 import EditVehicle from './pages/EditVehicle.jsx'
 import OwnerRoute from './components/OwnerRoute.jsx'
+import AdminRoute from './components/AdminRoute.jsx'
 
 export default function App() {
   return (
@@ -22,6 +25,15 @@ export default function App() {
         <Route path="/insurance" element={<Insurance />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/confirmed" element={<Confirmed />} />
+        <Route path="/trip/:id/sign" element={<SignAgreement />} />
+        <Route
+          path="/admin/coverage"
+          element={
+            <AdminRoute>
+              <AdminCoverage />
+            </AdminRoute>
+          }
+        />
         <Route path="/trips" element={<Trips />} />
         <Route path="/inbox" element={<Inbox />} />
         <Route
