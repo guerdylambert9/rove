@@ -162,9 +162,9 @@ A single person can hold both Renter and Owner roles on the same account.
 **How it works.** Before keys change hands, the renter signs a rental agreement at `/trip/:id/sign` with trip details (vehicle, dates, price, coverage acknowledgment). Signature JSON is stored in the `agreements` Storage bucket and linked on the `agreements` row; trip advances to `agreement_signed`.
 
 **Rules & acceptance criteria.**
-- The agreement is generated per trip, e-signed by the renter, and stored immutably with a timestamp. *(✅.)*
-- The agreement must reflect the coverage path chosen and the acknowledgment from §7. *(✅ summary on sign page.)*
-- Template must be drafted/reviewed by an attorney before use. *(⬜ Phase 0.)*
+- The agreement is generated per trip, e-signed by the renter, and stored immutably with a timestamp. *(✅ — template `rove-rental-draft-v2`.)*
+- The agreement must reflect the coverage path chosen and the acknowledgment from §7. *(✅.)*
+- Template must be drafted/reviewed by an attorney before use. *(🟡 — working draft in `docs/RENTAL_AGREEMENT_DRAFT.md` + in-app draft banner; counsel sign-off still required before live customers.)*
 
 ---
 

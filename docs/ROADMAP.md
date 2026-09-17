@@ -209,7 +209,7 @@ Phases 1–4 are the **critical path** to a legally launchable MVP. Phases 5–8
 
 **Remaining (production launch, not sandbox code):**
 - [ ] Production Bonzah host + partner CD balance / settle terms (with Bonzah)
-- [ ] Phase 0: Business Partner + Integration Partner terms, attorney-reviewed agreement template
+- [ ] Phase 0: Business Partner + Integration Partner terms; counsel approval of `docs/RENTAL_AGREEMENT_DRAFT.md` (`rove-rental-draft-v2` — draft banner stays until approved)
 
 ### Phase 5 — Identity verification / renter screening
 **Status:** ⬜ Not started · **5%**
