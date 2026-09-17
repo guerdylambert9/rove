@@ -5,17 +5,18 @@ import { fetchTrip } from '../api/trips.js'
 import { signTripAgreement } from '../api/coverage.js'
 import { isAgreementSigned, isCoverageVerified } from '../lib/tripReady.js'
 import { formatMoney } from '../lib/tripPricing.js'
+import {
+  RENTAL_AGREEMENT_DISCLAIMER,
+  RENTAL_AGREEMENT_TEMPLATE_VERSION,
+  buildAgreementAcknowledgment,
+  buildRentalAgreementDocument,
+} from '../lib/rentalAgreementTemplate.js'
 import Icon from '../components/Icon.jsx'
-
-const ACK_TEXT =
-  'I agree to the Rové peer-to-peer rental terms for this trip, including vehicle care, ' +
-  'return condition, fuel/charging, mileage limits if stated by the host, and applicable fees. ' +
-  'I confirm I am the authorized driver and will comply with traffic laws and the host’s rules.'
 
 export default function SignAgreement() {
   const { id: tripId } = useParams()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [trip, setTrip] = useState(null)
   const [loading, setLoading] = useState(true)
   const [signerName, setSignerName] = useState('')
@@ -40,6 +41,12 @@ export default function SignAgreement() {
       cancelled = true
     }
   }, [tripId])
+
+  useEffect(() => {
+    if (profile?.name && !signerName) {
+      setSignerName(profile.name)
+    }
+  }, [profile?.name, signerName])
 
   if (!user) {
     return <Navigate to="/account" replace state={{ from: `/trip/${tripId}/sign` }} />
@@ -97,6 +104,15 @@ export default function SignAgreement() {
 
   const vehicleName = trip.vehicle?.name ?? 'Vehicle'
   const total = trip.total ?? trip.priceBreakdown?.total
+  const document = buildRentalAgreementDocument({
+    trip,
+    renterName: profile?.name || signerName,
+    ownerName: trip.vehicle?.host,
+  })
+  const acknowledgmentText = buildAgreementAcknowledgment({
+    templateVersion: document.templateVersion,
+    coverageType: trip.coverage?.type,
+  })
 
   const handleSign = async () => {
     setError('')
@@ -115,7 +131,8 @@ export default function SignAgreement() {
         tripId: trip.id,
         renterId: user.id,
         signerName: signerName.trim(),
-        acknowledgmentText: ACK_TEXT,
+        acknowledgmentText,
+        agreementDocument: document,
       })
       navigate('/trips')
     } catch (err) {
@@ -128,11 +145,15 @@ export default function SignAgreement() {
   return (
     <div className="page">
       <div className="scroll">
-        <div className="pad" style={{ paddingTop: 18 }}>
+        <div className="pad" style={{ paddingTop: 18, paddingBottom: 24 }}>
           <h1 className="h1">Rental agreement</h1>
           <p className="muted-sm">
             Sign digitally before pickup. Your host can hand over keys once this is complete.
           </p>
+
+          <div className="agreement-draft-banner" role="status">
+            {RENTAL_AGREEMENT_DISCLAIMER}
+          </div>
 
           <div className="agreement-summary">
             <div className="agreement-row">
@@ -155,10 +176,21 @@ export default function SignAgreement() {
                 <b>{trip.coverage.bonzahPolicyNo}</b>
               </div>
             )}
+            <div className="agreement-row">
+              <span className="muted-sm">Template</span>
+              <b>{RENTAL_AGREEMENT_TEMPLATE_VERSION}</b>
+            </div>
           </div>
 
-          <div className="agreement-terms">
-            <p>{ACK_TEXT}</p>
+          <div className="agreement-terms agreement-terms--full">
+            {document.sections.map((section) => (
+              <section key={section.title} className="agreement-section">
+                <h2>{section.title}</h2>
+                {section.body.split('\n').map((line, i) => (
+                  <p key={`${section.title}-${i}`}>{line || '\u00a0'}</p>
+                ))}
+              </section>
+            ))}
           </div>
 
           <label className="field">
@@ -173,7 +205,7 @@ export default function SignAgreement() {
 
           <label className="ackbox">
             <input type="checkbox" checked={ack} onChange={(e) => setAck(e.target.checked)} />
-            <span>I have read and agree to the rental terms above.</span>
+            <span>{acknowledgmentText}</span>
           </label>
 
           {error && (

@@ -88,14 +88,21 @@ export async function signTripAgreement({
   renterId,
   signerName,
   acknowledgmentText,
+  agreementDocument = null,
 }) {
   if (!isSupabaseConfigured) throw new Error('SUPABASE_NOT_CONFIGURED')
+
+  const templateVersion =
+    agreementDocument?.templateVersion ?? 'rove-rental-draft-v2'
 
   const signaturePayload = {
     signerName,
     signedAt: new Date().toISOString(),
     acknowledgment: acknowledgmentText,
-    templateVersion: 'rove-rental-v1',
+    templateVersion,
+    status: agreementDocument?.status ?? null,
+    meta: agreementDocument?.meta ?? null,
+    fullText: agreementDocument?.fullText ?? acknowledgmentText,
   }
 
   const path = `${renterId}/${tripId}-signature.json`
@@ -115,7 +122,7 @@ export async function signTripAgreement({
       signature_ref: path,
       signer_name: signerName,
       signed_at: signaturePayload.signedAt,
-      template_version: 'rove-rental-v1',
+      template_version: templateVersion,
       acknowledgment_snapshot: acknowledgmentText,
     },
     { onConflict: 'trip_id' },
