@@ -1497,10 +1497,25 @@ a.trip-return-btn {
 }
 
 /* ---- Auth / Account ---- */
+.auth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 8px;
+  padding: 22px 18px 20px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(11, 37, 69, 0.06);
+}
+.auth-panel .h1 {
+  font-size: 26px;
+  letter-spacing: -0.02em;
+}
 .auth-note {
   font-size: 14px;
   color: var(--slate);
-  margin-bottom: 16px;
+  margin-bottom: 18px;
   line-height: 1.5;
 }
 .auth-note code {
@@ -1514,6 +1529,21 @@ a.trip-return-btn {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  width: 100%;
+}
+.authform .cta,
+.oauth-btn.cta,
+.auth-cta {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  justify-content: center;
+  gap: 10px;
+}
+.authform .cta,
+.oauth-btn.cta {
+  margin-top: 4px;
+  margin-bottom: 0;
 }
 .authfield {
   display: flex;
@@ -1527,11 +1557,22 @@ a.trip-return-btn {
 }
 .authfield input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 13px 14px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--card);
+  background: var(--mist);
   font-size: 15px;
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.authfield input:hover {
+  border-color: #c9d6e8;
+}
+.authfield input:focus {
+  outline: none;
+  border-color: var(--sky);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.18);
 }
 .combofield-hint {
   display: block;
@@ -1856,8 +1897,10 @@ a.trip-return-btn {
 }
 .auth-switch {
   width: 100%;
-  margin-top: 16px;
+  margin-top: 18px;
+  padding: 4px 0;
   font-size: 14px;
+  font-weight: 600;
   color: var(--sky);
   text-align: center;
 }
@@ -1873,13 +1916,20 @@ a.trip-return-btn {
 }
 .oauth-btn {
   width: 100%;
-  margin-bottom: 4px;
+  margin: 0 0 4px;
+  min-height: 50px;
+  font-weight: 600;
+}
+.oauth-btn .oauth-icon {
+  width: 18px;
+  height: 18px;
+  flex: none;
 }
 .auth-divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 16px 0;
+  margin: 18px 0 16px;
   color: var(--slate);
   font-size: 13px;
 }
