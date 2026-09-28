@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { Link, useNavigate, Navigate } from 'react-router-dom'
 import { useBooking } from '../state/useBooking.js'
 import { useAuth } from '../state/auth.jsx'
 import { bypassInsuranceGate, DEV_COVERAGE_STUB } from '../lib/bookingFlags.js'
@@ -11,10 +11,15 @@ import {
   DEFAULT_BONZAH_COVERS,
   DEFAULT_PICKUP_COUNTRY,
   DEFAULT_PICKUP_STATE,
+  PREFERRED_COVERAGE_LABEL,
+  PREFERRED_COVERAGE_SUMMARY,
   US_PICKUP_STATES,
   hasAnyBonzahCover,
+  isPreferredCoverage,
   normalizeBonzahCovers,
+  preferredCoverageCovers,
 } from '../lib/bonzahCovers.js'
+import { getBonzahVehicleExclusion } from '../lib/bonzahExcludedVehicles.js'
 import { fetchBonzahPremium } from '../api/bonzah.js'
 import {
   uploadCoverageProof,
@@ -67,6 +72,11 @@ export default function Insurance() {
   useEffect(() => {
     if (!trip.car) return
     if (coverage.type !== 'protection') return
+    if (getBonzahVehicleExclusion(trip.car).excluded) {
+      setPremiumError('Bonzah coverage is not available for this vehicle')
+      setCoverage({ premiumTotal: null })
+      return
+    }
     if (!hasAnyBonzahCover(covers)) {
       setPremiumError('Select at least one coverage product')
       setCoverage({ premiumTotal: null })
@@ -98,6 +108,7 @@ export default function Insurance() {
           premiumTotal: Number(data.totalPremium),
           covers,
           pickupState,
+          packageLabel: PREFERRED_COVERAGE_LABEL,
         })
       } catch (err) {
         if (cancelled) return
@@ -130,15 +141,39 @@ export default function Insurance() {
     setCoverage,
   ])
 
+  // Clear Bonzah path if the vehicle is on Bonzah's restricted list
+  useEffect(() => {
+    if (!trip.car) return
+    if (!getBonzahVehicleExclusion(trip.car).excluded) return
+    if (coverage.type !== 'protection') return
+    setCoverage({
+      type: null,
+      covers: null,
+      packageLabel: null,
+      premiumTotal: null,
+      umOptOutAcknowledged: false,
+    })
+    setRates(null)
+  }, [trip.car, coverage.type, setCoverage])
+
   if (!trip.car) return <Navigate to="/" replace />
+
+  const vehicleExclusion = getBonzahVehicleExclusion(trip.car)
+  const bonzahBlocked = vehicleExclusion.excluded
+
+  const preferredOn = isPreferredCoverage(covers)
+  const preferredProducts = BONZAH_PRODUCTS.filter((p) => p.id === 'cdw' || p.id === 'rcli')
+  const addonProducts = BONZAH_PRODUCTS.filter((p) => p.id === 'sli' || p.id === 'pai')
 
   const hasCoverageType = coverage.type === 'own' || coverage.type === 'protection'
   const protectionReady =
     coverage.type === 'protection' &&
-    hasAnyBonzahCover(covers) &&
+    !bonzahBlocked &&
+    preferredOn &&
     coverage.premiumTotal != null &&
     Number(coverage.premiumTotal) > 0 &&
     isInsuredComplete(insured) &&
+    coverage.umOptOutAcknowledged === true &&
     !premiumLoading &&
     !premiumError
 
@@ -190,12 +225,15 @@ export default function Insurance() {
 
   const selectType = (type) => {
     if (type === 'protection') {
+      if (bonzahBlocked) return
       setCoverage({
         type: 'protection',
         proofUploaded: false,
-        covers: coverage.covers ?? DEFAULT_BONZAH_COVERS,
+        covers: preferredCoverageCovers(coverage.covers),
+        packageLabel: PREFERRED_COVERAGE_LABEL,
         pickupState: coverage.pickupState || DEFAULT_PICKUP_STATE,
         premiumTotal: null,
+        umOptOutAcknowledged: coverage.umOptOutAcknowledged === true,
       })
       setRates(null)
       setPremiumError('')
@@ -203,20 +241,25 @@ export default function Insurance() {
       setCoverage({
         type: 'own',
         covers: null,
+        packageLabel: null,
         premiumTotal: null,
         proofUploaded: coverage.proofUploaded,
+        umOptOutAcknowledged: false,
       })
       setRates(null)
       setPremiumError('')
     }
   }
 
-  const toggleCover = (id) => {
-    const next = { ...covers, [id]: !covers[id] }
-    if (id === 'rcli' && !next.rcli) next.sli = false
-    if (id === 'sli' && next.sli) next.rcli = true
+  const toggleAddon = (id) => {
+    if (id !== 'sli' && id !== 'pai') return
+    const next = preferredCoverageCovers({
+      ...covers,
+      [id]: !covers[id],
+    })
     setCoverage({
-      covers: normalizeBonzahCovers(next),
+      covers: next,
+      packageLabel: PREFERRED_COVERAGE_LABEL,
       premiumTotal: null,
     })
     setRates(null)
@@ -233,13 +276,18 @@ export default function Insurance() {
   if (coverage.type === 'own' && !coverage.proofUploaded) {
     missing.push('upload proof of insurance')
   }
-  if (coverage.type === 'protection' && !protectionReady) {
-    if (!hasAnyBonzahCover(covers)) missing.push('select Bonzah products')
+  if (coverage.type === 'protection' && bonzahBlocked) {
+    missing.push('choose own insurance (Bonzah unavailable for this vehicle)')
+  }
+  if (coverage.type === 'protection' && !bonzahBlocked && !protectionReady) {
+    if (!preferredOn) missing.push('keep Preferred Coverage (CDW + RCLI)')
     else if (!user) missing.push('sign in for a quote')
     else if (premiumLoading) missing.push('wait for the quote')
     else if (premiumError) missing.push('fix the quote error')
     else if (!isInsuredComplete(insured)) missing.push('complete insured details')
-    else missing.push('wait for a valid premium')
+    else if (!coverage.umOptOutAcknowledged) {
+      missing.push('acknowledge the UM/UIM/PIP/Med-Pay disclosure')
+    } else missing.push('wait for a valid premium')
   }
   if (!coverage.acknowledged) missing.push('check the acknowledgment')
 
@@ -307,27 +355,43 @@ export default function Insurance() {
 
           <button
             type="button"
-            className={`insopt ${coverage.type === 'protection' ? 'sel' : ''}`}
+            className={`insopt ${coverage.type === 'protection' ? 'sel' : ''} ${bonzahBlocked ? 'insopt--disabled' : ''}`}
             onClick={() => selectType('protection')}
+            disabled={bonzahBlocked}
+            aria-disabled={bonzahBlocked}
           >
             <div className="hd">
-              <div className="nm">Add Bonzah trip protection</div>
+              <div className="nm">Preferred Coverage (Bonzah)</div>
               <span className="hd-right">
                 {coverage.type === 'protection' && coverage.premiumTotal != null ? (
                   <span className="pr">{formatMoney(coverage.premiumTotal)}</span>
                 ) : (
-                  <span className="pr muted-pr">Live quote</span>
+                  <span className="pr muted-pr">{bonzahBlocked ? 'Unavailable' : 'Live quote'}</span>
                 )}
                 <span className={`radio ${coverage.type === 'protection' ? 'on' : ''}`} />
               </span>
             </div>
             <div className="ds">
-              Embedded coverage from Bonzah (licensed broker). Rové is not the insurer.
-              Premium is calculated for your trip dates.
+              {bonzahBlocked
+                ? vehicleExclusion.reason
+                : 'One package: Collision Damage Waiver (CDW) + Renter’s Contingent Liability (RCLI). Brokered by Bonzah — Rové is not the insurer.'}
             </div>
+            {bonzahBlocked && (
+              <p className="bonzah-blocked-note">
+                You can still rent this vehicle with your own insurance.{' '}
+                <a
+                  href={BONZAH_EXCLUDED_VEHICLES_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Bonzah restricted vehicles
+                </a>
+              </p>
+            )}
           </button>
 
-          {coverage.type === 'protection' && (
+          {coverage.type === 'protection' && !bonzahBlocked && (
             <div className="bonzah-panel" onClick={(e) => e.stopPropagation()}>
               <label className="field">
                 <span>Pickup state</span>
@@ -428,8 +492,51 @@ export default function Insurance() {
                 </div>
               </div>
 
+              <div className="preferred-package">
+                <div className="preferred-package-hd">
+                  <span className={`check on`} />
+                  <div>
+                    <div className="nm">{PREFERRED_COVERAGE_LABEL}</div>
+                    <div className="tagline">Includes CDW + RCLI · issued via Bonzah API</div>
+                  </div>
+                </div>
+                <p className="ds">{PREFERRED_COVERAGE_SUMMARY}</p>
+              </div>
+
               <div className="bonzah-products">
-                {BONZAH_PRODUCTS.map((product) => {
+                {preferredProducts.map((product) => (
+                  <div key={product.id} className="cover-toggle on cover-toggle--readonly">
+                    <div className="cover-toggle-hd">
+                      <span className="check on" />
+                      <div>
+                        <div className="nm">{product.name}</div>
+                        <div className="tagline">{product.tagline}</div>
+                      </div>
+                    </div>
+                    <p className="ds">{product.summary}</p>
+                    <ul className="cover-bullets">
+                      {product.bullets.map((b) => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                    {rates?.[product.id] && (
+                      <div className="cover-rate">{rates[product.id]}</div>
+                    )}
+                    <a
+                      className="flyer-link"
+                      href={product.flyer}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Description of coverage (PDF)
+                    </a>
+                  </div>
+                ))}
+
+                <p className="muted-sm" style={{ margin: '8px 0 4px' }}>
+                  Optional add-ons
+                </p>
+                {addonProducts.map((product) => {
                   const on = covers[product.id]
                   const blocked =
                     product.requires === 'rcli' && !covers.rcli && !on
@@ -439,7 +546,7 @@ export default function Insurance() {
                       type="button"
                       className={`cover-toggle ${on ? 'on' : ''}`}
                       disabled={blocked}
-                      onClick={() => toggleCover(product.id)}
+                      onClick={() => toggleAddon(product.id)}
                     >
                       <div className="cover-toggle-hd">
                         <span className={`check ${on ? 'on' : ''}`} />
@@ -486,6 +593,23 @@ export default function Insurance() {
                 )}
               </div>
 
+              <label className="ackbox ackbox--nested">
+                <input
+                  type="checkbox"
+                  checked={coverage.umOptOutAcknowledged === true}
+                  onChange={(e) =>
+                    setCoverage({ umOptOutAcknowledged: e.target.checked })
+                  }
+                />
+                <span>
+                  I understand that by purchasing Bonzah liability coverage I am opting
+                  out of Personal Injury Protection (PIP), Uninsured Motorist (UM), and
+                  Underinsured Motorist (UIM) coverage where allowed by law, and that
+                  Med-Pay / similar benefits may not apply. Full terms are in the Bonzah
+                  policy documents.
+                </span>
+              </label>
+
               <p className="bonzah-disclosure">
                 By purchasing coverage through this site, you acknowledge that Pablow
                 Inc. dba Bonzah.com (&quot;Bonzah&quot;) is the licensed broker of record and
@@ -495,11 +619,13 @@ export default function Insurance() {
                 and exclusions are in the policy documents. See{' '}
                 <a href={BONZAH_TERMS_URL} target="_blank" rel="noreferrer">
                   Bonzah Terms
-                </a>{' '}
-                and{' '}
+                </a>
+                ,{' '}
                 <a href={BONZAH_PRIVACY_URL} target="_blank" rel="noreferrer">
                   Privacy
                 </a>
+                , and Rové{' '}
+                <Link to="/terms">Renter Terms</Link>
                 . Review{' '}
                 <a
                   href={BONZAH_EXCLUDED_VEHICLES_URL}

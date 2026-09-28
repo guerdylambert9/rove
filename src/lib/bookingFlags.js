@@ -21,8 +21,10 @@ export const DEV_COVERAGE_STUB = {
   acknowledged: true,
   proofUploaded: false,
   covers: { cdw: true, rcli: true, sli: false, pai: false },
+  packageLabel: 'Preferred Coverage',
   pickupState: 'Florida',
   premiumTotal: null,
+  umOptOutAcknowledged: true,
 }
 
 export function coverageForBooking(coverage) {

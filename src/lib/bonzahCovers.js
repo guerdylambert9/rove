@@ -71,6 +71,26 @@ export const DEFAULT_BONZAH_COVERS = {
   pai: false,
 }
 
+/** Preferred Coverage = CDW + RCLI (Bonzah-approved package presentation). */
+export const PREFERRED_COVERAGE_IDS = ['cdw', 'rcli']
+export const PREFERRED_COVERAGE_LABEL = 'Preferred Coverage'
+export const PREFERRED_COVERAGE_SUMMARY =
+  'Collision damage waiver plus renter’s contingent liability — the recommended package for Rové trips. Issued as CDW and RCLI through Bonzah.'
+
+export function isPreferredCoverage(covers) {
+  const n = normalizeBonzahCovers(covers)
+  return n.cdw && n.rcli
+}
+
+export function preferredCoverageCovers(extra = {}) {
+  return normalizeBonzahCovers({
+    ...DEFAULT_BONZAH_COVERS,
+    ...extra,
+    cdw: true,
+    rcli: true,
+  })
+}
+
 export const BONZAH_PRODUCTS = [
   {
     id: 'cdw',
