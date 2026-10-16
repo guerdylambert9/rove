@@ -13,6 +13,9 @@ import {
 } from '../lib/rentalAgreementTemplate.js'
 import Icon from '../components/Icon.jsx'
 
+export const BONZAH_ADDENDUM_URL = '/legal/Bonzah_Rental_Agreement_Addendum_v2.pdf'
+export const BONZAH_ADDENDUM_VERSION = 'Bonzah_Rental_Agreement_Addendum_v2'
+
 export default function SignAgreement() {
   const { id: tripId } = useParams()
   const navigate = useNavigate()
@@ -21,6 +24,7 @@ export default function SignAgreement() {
   const [loading, setLoading] = useState(true)
   const [signerName, setSignerName] = useState('')
   const [ack, setAck] = useState(false)
+  const [addendumAck, setAddendumAck] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -104,20 +108,35 @@ export default function SignAgreement() {
 
   const vehicleName = trip.vehicle?.name ?? 'Vehicle'
   const total = trip.total ?? trip.priceBreakdown?.total
+  const isProtection = trip.coverage?.type === 'protection'
   const document = buildRentalAgreementDocument({
     trip,
     renterName: profile?.name || signerName,
     ownerName: trip.vehicle?.host,
   })
+  if (isProtection) {
+    document.meta = {
+      ...(document.meta || {}),
+      bonzahAddendumUrl: BONZAH_ADDENDUM_URL,
+      bonzahAddendumVersion: BONZAH_ADDENDUM_VERSION,
+    }
+  }
   const acknowledgmentText = buildAgreementAcknowledgment({
     templateVersion: document.templateVersion,
     coverageType: trip.coverage?.type,
+    includeAddendum: isProtection,
   })
+
+  const canSign = Boolean(signerName.trim() && ack && (!isProtection || addendumAck))
 
   const handleSign = async () => {
     setError('')
     if (!signerName.trim()) {
       setError('Enter your full legal name')
+      return
+    }
+    if (isProtection && !addendumAck) {
+      setError('Confirm you have read the Bonzah Rental Agreement Addendum')
       return
     }
     if (!ack) {
@@ -193,6 +212,42 @@ export default function SignAgreement() {
             ))}
           </div>
 
+          {isProtection && (
+            <div className="agreement-addendum">
+              <h2 className="h1" style={{ fontSize: 18 }}>
+                Bonzah Rental Agreement Addendum
+              </h2>
+              <p className="muted-sm">
+                Required when trip protection is purchased. This addendum is part of the
+                agreement you are signing.
+              </p>
+              <iframe
+                className="agreement-addendum-frame"
+                title="Bonzah Rental Agreement Addendum"
+                src={BONZAH_ADDENDUM_URL}
+              />
+              <a
+                className="flyer-link"
+                href={BONZAH_ADDENDUM_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open addendum PDF
+              </a>
+              <label className="ackbox" style={{ marginTop: 12 }}>
+                <input
+                  type="checkbox"
+                  checked={addendumAck}
+                  onChange={(e) => setAddendumAck(e.target.checked)}
+                />
+                <span>
+                  I have read the Bonzah Rental Agreement Addendum and agree it is part of
+                  this rental agreement.
+                </span>
+              </label>
+            </div>
+          )}
+
           <label className="field">
             <span>Full legal name (e-signature)</span>
             <input
@@ -219,7 +274,7 @@ export default function SignAgreement() {
       <button
         type="button"
         className="cta sky"
-        disabled={busy || !signerName.trim() || !ack}
+        disabled={busy || !canSign}
         onClick={handleSign}
       >
         <span>{busy ? 'Signing…' : 'Sign agreement'}</span>

@@ -97,7 +97,7 @@ Source: `docs/Bonzah_Rental_Agreement_Addendum_v2.pdf` (Pablow / Bonzah).
 | 9 | Only authorized drivers on the rental agreement |
 | 10 | Timestamps drive coverage alignment |
 
-**App status:** PDF exists in repo; e-sign mentions Bonzah themes but does **not** yet show/attach this addendum as a required readable document. Gap for compliance walkthrough.
+**App status:** Addendum PDF served at `/legal/Bonzah_Rental_Agreement_Addendum_v2.pdf` and required on the e-sign page for Bonzah protection trips.
 
 ---
 
@@ -164,39 +164,40 @@ Source: `docs/Bonzah_Rental_Agreement_Addendum_v2.pdf` (Pablow / Bonzah).
 
 | Item | Status | Where / notes |
 | --- | --- | --- |
-| Business Partner Terms accepted | ⬜ | Accept in Bonzah onboarding |
-| Integration Partner Terms accepted | ⬜ | Accept in Bonzah onboarding |
-| Tech E&O $1M + cert naming Pablow + Bonzah | ⬜ | Broker; bring status to call |
-| Orientation / training completed | ⬜ | Ask Brandon for link |
+| Business Partner Terms accepted | ⬜ | Affirmative email + continued use (Brandon) |
+| Integration Partner Terms accepted | ⬜ | Affirmative email + continued use (Brandon) |
+| Tech E&O $1M + cert naming Pablow + Bonzah | ⬜ | Broker; send to admin@bonzah.com + CC Brandon |
+| Orientation / training completed | ✅ | Brandon confirmed August training done |
 | Product descriptions (CDW/RCLI/SLI/PAI) | ✅ | `/insurance` — Bonzah-aligned copy |
+| Preferred Coverage (CDW+RCLI package UI) | ✅ | One option; both descriptions + flyers |
 | Flyer PDF links | ✅ | Per product on Insurance |
 | Excluded vehicles link | ✅ | Insurance disclosure area |
+| Excluded-vehicle Bonzah hard-block | ✅ | Block purchase only; own-insurance still allowed |
 | Bonzah Terms + Privacy links | ✅ | Insurance disclosure |
 | Broker disclosure (Pablow / Bonzah) | ✅ | Insurance disclosure text |
 | “Rové is not the insurer” ack | ✅ | Insurance checkbox |
+| UM/UIM/PIP/Med-Pay opt-out checkbox | ✅ | Protection path on `/insurance` |
 | Insurance broken out from vehicle cost | ✅ | Checkout line items |
 | Live premium → settle → BORD | ✅ | Sandbox verified |
+| Rental Agreement Addendum on e-sign | ✅ | PDF + required checkbox when protection |
+| Consumer / Renter Terms on site | 🟡 | `/terms` draft live — counsel + Brandon review |
 | Policy PDF download | ✅ | Trip card |
-| UM/UIM/PIP/Med-Pay opt-out explicit UI | 🟡 | Mentioned in agreement draft; **no dedicated POS checkbox** — confirm with Brandon |
-| Rental Agreement Addendum shown to renter | 🟡 | PDF in `docs/`; **not wired into e-sign UI yet** |
-| Dedicated Renter Terms page | ⬜ | Need draft + counsel; not in app |
 | Attorney-approved rental agreement | 🟡 | `rove-rental-draft-v2` with draft banner |
-| Excluded vehicle hard-block (e.g. BMW) | ⬜ | Not enforced in booking |
-| Production host + credentials | ⬜ | After compliance meeting |
+| Production host + credentials | ⬜ | After compliance walkthrough |
 | Portal verification before key handoff (ops process) | 🟡 | App shows BORD; train owners to confirm portal |
 
 ### Screen-share order (suggested)
 1. `/insurance` — products, flyers, disclosure, excluded link, ack  
 2. Checkout — vehicle vs insurance breakout  
 3. Trips — BORD + PDF download  
-4. `/trip/:id/sign` — agreement (note draft + addendum gap)  
-5. Admin own-policy queue (if relevant)  
-6. Open `Bonzah_Rental_Agreement_Addendum_v2.pdf` and ask where it must live  
-7. Ask about Renter Terms + E&O cert next steps  
+4. `/trip/:id/sign` — agreement + Bonzah addendum (protection trips)
+5. Admin own-policy queue (if relevant)
+6. `/terms` — Renter Terms draft
+7. Ask Brandon to confirm terms draft + E&O cert next steps
 8. Confirm production credential handoff
 
 ---
 
 ## 9. One-liner for the call open
 
-> “We’ve completed sandbox quote → settle → BORD + PDFs. We’ll accept both partner agreements and bring Tech E&O. Today we want you to review our POS compliance screens, tell us what’s still missing (especially addendum, renter terms, and UM opt-out), confirm whether premiums vary by car value, and then issue production credentials.”
+> “We’ve completed sandbox quote → settle → BORD + PDFs. Preferred Coverage, addendum on e-sign, Renter Terms draft, UM opt-out checkbox, and excluded-vehicle Bonzah block are live on staging. We’ll accept both partner agreements and bring Tech E&O. Today we want you to review the compliance screens and then issue production credentials.”

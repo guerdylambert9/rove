@@ -13,6 +13,7 @@ import Inbox from './pages/Inbox.jsx'
 import Fleet from './pages/Fleet.jsx'
 import AddVehicle from './pages/AddVehicle.jsx'
 import EditVehicle from './pages/EditVehicle.jsx'
+import Terms from './pages/Terms.jsx'
 import OwnerRoute from './components/OwnerRoute.jsx'
 import AdminRoute from './components/AdminRoute.jsx'
 
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/confirmed" element={<Confirmed />} />
         <Route path="/trip/:id/sign" element={<SignAgreement />} />
+        <Route path="/terms" element={<Terms />} />
         <Route
           path="/admin/coverage"
           element={

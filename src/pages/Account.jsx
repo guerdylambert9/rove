@@ -205,6 +205,10 @@ export default function Account() {
             >
               Sign out
             </button>
+
+            <p className="auth-note" style={{ marginTop: 20, textAlign: 'center' }}>
+              <Link to="/terms">Renter Terms</Link>
+            </p>
           </div>
         </div>
         <AppBottomNav />
@@ -355,6 +359,9 @@ export default function Account() {
               )}
             </button>
           </div>
+          <p className="auth-note" style={{ marginTop: 20, textAlign: 'center' }}>
+            <Link to="/terms">Renter Terms</Link>
+          </p>
         </div>
       </div>
       <AppBottomNav />

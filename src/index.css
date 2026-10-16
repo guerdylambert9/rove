@@ -837,6 +837,112 @@ a {
   cursor: not-allowed;
 }
 
+.cover-toggle--readonly {
+  cursor: default;
+}
+
+.insopt--disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.bonzah-blocked-note {
+  margin-top: 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--slate);
+}
+
+.preferred-package {
+  margin: 4px 0 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--sky);
+  background: #f3f8ff;
+}
+
+.preferred-package-hd {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.preferred-package .check {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2px solid var(--sky);
+  background: var(--sky);
+  box-shadow: inset 0 0 0 2px #fff;
+  flex: none;
+  margin-top: 1px;
+}
+
+.preferred-package .nm {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.preferred-package .tagline {
+  font-size: 11px;
+  color: var(--slate);
+  margin-top: 2px;
+}
+
+.preferred-package .ds {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--slate);
+  line-height: 1.45;
+}
+
+.ackbox--nested {
+  margin: 12px 0;
+  align-items: flex-start;
+}
+
+.agreement-addendum {
+  margin: 16px 0;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+
+.agreement-addendum-frame {
+  display: block;
+  width: 100%;
+  height: 320px;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.terms-doc {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.terms-doc section h2 {
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.terms-doc section p {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.terms-doc a {
+  color: var(--sky);
+}
+
 .cover-toggle-hd {
   display: flex;
   gap: 10px;

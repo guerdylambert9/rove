@@ -17,17 +17,26 @@ export const RENTAL_AGREEMENT_DISCLAIMER =
   'until Florida counsel reviews and replaces this notice with an approved version.'
 
 /** Short checkbox acknowledgment stored with the signature. */
-export function buildAgreementAcknowledgment({ templateVersion, coverageType }) {
+export function buildAgreementAcknowledgment({
+  templateVersion,
+  coverageType,
+  includeAddendum = false,
+}) {
   const coverageLine =
     coverageType === 'protection'
       ? 'I acknowledge Bonzah/Pablow is the broker of record for any trip protection I purchased, and Rové is not the insurer.'
       : 'I acknowledge that I am relying on my own auto insurance (or other coverage I arranged), and Rové is not the insurer.'
+
+  const addendumLine = includeAddendum
+    ? 'I have read and agree to the Bonzah Rental Agreement Addendum included with this signing.'
+    : ''
 
   return (
     `I have read the Rové Peer-to-Peer Vehicle Rental Agreement ` +
     `(template ${templateVersion}), including the trip schedule, payment and deposit terms, ` +
     `vehicle care and return obligations, prohibited uses, and liability provisions. ` +
     `${coverageLine} ` +
+    (addendumLine ? `${addendumLine} ` : '') +
     `By typing my full legal name, I intend to sign electronically under the ESIGN Act / UETA.`
   )
 }
